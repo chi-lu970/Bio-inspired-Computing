@@ -1,347 +1,462 @@
 # PyVRP 完整解析文件
 
-> 論文來源：*PyVRP: A High-Performance VRP Solver Package*
-> 作者：Niels A. Wouda, Leon Lan, Wouter Kool
-> 發表：INFORMS Journal on Computing, 2024, Vol.36(4), pp.943–955
-> PDF：https://arxiv.org/pdf/2403.13795
-> 程式碼：https://github.com/INFORMSJoC/2023.0055
+> **論文來源**：*PyVRP: A High-Performance VRP Solver Package*
+> **作者**：Niels A. Wouda（格羅寧根大學）、Leon Lan（阿姆斯特丹自由大學）、Wouter Kool（ORTEC）
+> **發表**：INFORMS Journal on Computing, 2024, Vol.36(4), pp.943–955
+> **版本**：PyVRP v0.5.0（論文對應版本）
 
 ---
 
-> **掃描狀態：** 論文 PDF 全文（55,947 字元）已完整讀取，包含正文、附錄 A（參數表）、附錄 B/C（100 個 CVRP + 60 個 VRPTW 完整實驗數據）與參考文獻。
+> **掃描狀態**：論文 PDF 全文（55,947 字元）+ 完整原始碼（所有 `.py` 模組）均已讀取。
+> 涵蓋：正文 7 節（含 Listing 1/2 程式範例）、附錄 A（參數表 Table 3）、附錄 B（100 個 CVRP 實驗數據 Table 4）、附錄 C（60 個 VRPTW 實驗數據 Table 5）、所有參考文獻。
 
 ---
 
 ## 目錄
 
-1. [這個套件在解什麼問題？](#1-這個套件在解什麼問題)
-2. [核心演算法：HGS 是什麼？](#2-核心演算法hgs-是什麼)
-3. [演算法完整流程](#3-演算法完整流程)
-4. [各模組功能詳解](#4-各模組功能詳解)
-5. [程式碼架構總覽](#5-程式碼架構總覽)
-6. [效能表現](#6-效能表現)
-7. [與其他求解器比較](#7-與其他求解器比較)
-8. [對應到你的期中報告](#8-對應到你的期中報告)
+1. [PyVRP 是什麼？](#1-pyvrp-是什麼)
+2. [問題數學定義](#2-問題數學定義)
+3. [核心演算法 HGS](#3-核心演算法hgs)
+4. [演算法完整流程](#4-演算法完整流程)
+5. [技術實作詳解](#5-技術實作詳解)
+   - 5.1 遺傳演算法主迴圈
+   - 5.2 局部搜尋
+   - 5.3 族群管理
+   - 5.4 懲罰管理
+   - 5.5 SREX 交叉算子
+   - 5.6 多樣性指標 BPD
+6. [程式碼架構](#6-程式碼架構)
+7. [完整 API 使用方式](#7-完整-api-使用方式)
+   - 7.1 Model 高層介面（最簡單）
+   - 7.2 底層完整組裝方式
+   - 7.3 從檔案讀取 VRPLIB / Solomon 格式
+   - 7.4 命令列介面（CLI）
+   - 7.5 停止條件
+   - 7.6 讀取與視覺化結果
+8. [所有可調整的超參數](#8-所有可調整的超參數)
+9. [效能表現](#9-效能表現)
+10. [與其他求解器比較](#10-與其他求解器比較)
+11. [如何延伸 PyVRP](#11-如何延伸-pyvrp)
+12. [參考文獻](#12-參考文獻)
 
 ---
 
-## 1. 這個套件在解什麼問題？
+## 1. PyVRP 是什麼？
 
-### 1.1 車輛路線問題（VRP）
+### 1.1 一句話定義
 
-**生活例子：** 快遞公司有幾輛卡車、一個倉庫、很多客戶要送貨。問題是：怎麼規劃每輛車的路線，讓總行駛距離最短？
+**PyVRP 是一個高效能的開源 VRP（車輛路徑問題）求解器。你輸入地圖和限制，它告訴你怎麼派車最省距離。**
 
-這就是 **VRP（Vehicle Routing Problem）**，是物流業最核心的最佳化問題之一。
+### 1.2 解的是什麼問題
 
-### 1.2 PyVRP 支援的兩種變型
+**VRP（Vehicle Routing Problem，車輛路徑問題）**：快遞公司有幾輛卡車、一個倉庫、若干客戶需要送貨，如何規劃每輛車的路線使總行駛距離最短？
+
+PyVRP 目前支援兩種主要 VRP 變型：
 
 | 問題 | 說明 | 限制 |
 |------|------|------|
-| **CVRP**（有容量限制的 VRP） | 每輛車有載重上限，超了就不能裝 | 容量限制 |
-| **VRPTW**（有時間窗的 VRP） | 每個客戶必須在指定時間段內被服務 | 容量 + 時間窗 |
+| **CVRP**（Capacitated VRP） | 每輛車有載重上限 | 容量限制 |
+| **VRPTW**（VRP with Time Windows） | 每個客戶有時間窗，必須在指定時間段內服務 | 容量 + 時間窗 |
 
-### 1.3 問題數學定義
+PyVRP 的設計同時支援更廣的 VRP 變型，包含：
+- **獎賞型 VRP（Prize-collecting）**：客戶有 prize，不一定全部要訪問
+- **釋放時間（Release times）**：貨物最早可以出發的時間
+- **多車型**：不同容量的車輛混合使用
 
-- **輸入：**
-  - 一個倉庫（出發點/終點）
-  - n 個客戶，每人有座標、需求量、可選的時間窗
-  - 一組車輛，每輛有容量上限
-- **目標：** 最小化所有路線的總行駛距離
-- **限制：** 每台車不能超載；如果有時間窗，必須在時間窗內抵達
+### 1.3 PyVRP 的設計哲學（論文核心主張）
+
+> *"PyVRP combines the flexibility of Python with the performance of C++, by implementing (only) performance critical parts of the algorithm in C++, while being fully customisable at the Python level."*
+
+- **只有效能瓶頸部分**（局部搜尋操作符、解的資料結構、BPD 計算）才用 C++ 實作
+- **所有邏輯控制**（GA 主迴圈、族群管理、懲罰管理）用 Python 實作，使用者可輕鬆替換任何組件
+- 靈活性帶來的效能損失可忽略不計
+
+### 1.4 歷史成就
+
+- **2021 DIMACS VRPTW 競賽：第一名**（HGS-DIMACS 版本）
+- **EURO meets NeurIPS 2022 VRP 競賽靜態組：第一名**
+- 延長運算後改善了 Homberger & Gehring 300 個實例中 **27 個歷史最佳解（BKS）**
 
 ---
 
-## 2. 核心演算法：HGS 是什麼？
+## 2. 問題數學定義
 
-### 2.1 全名
+### 2.1 CVRP
+
+**輸入**：
+- 客戶 $i = 1, \ldots, n$，各有需求量 $q_i \geq 0$
+- 倉庫 $0$（路線的出發點和終點）
+- 邊距離 $d_{ij} \geq 0$（客戶 $i$ 到客戶 $j$ 的距離）
+- 車輛容量 $Q > 0$
+
+**目標**：最小化所有路線的總行駛距離
+
+**限制**：每台車的客戶總需求量 $\leq Q$；每個客戶恰好被一台車服務
+
+### 2.2 VRPTW
+
+在 CVRP 基礎上增加：
+- 每個客戶 $i$ 有服務時間 $s_i \geq 0$
+- 每個客戶 $i$ 有時間窗 $[e_i, l_i]$（$e_i \leq l_i$）：必須在此區間內開始服務
+- 車輛可以「等待」（早到）但不能遲到
+- 從 $i$ 到 $j$ 的行駛時間 $t_{ij} \geq 0$（PyVRP 支援距離矩陣和時間矩陣分開設定）
+
+### 2.3 資料格式約定
+
+PyVRP 內部使用**整數**距離和時間（效能考量，浮點數略慢）。
+讀取 benchmark 實例時提供 helper function 處理四捨五入或截斷，支援：
+- `round`：四捨五入到最近整數
+- `trunc`：截斷為整數
+- `trunc1` / `dimacs`：乘以 10 後截斷（保留一位小數精度，DIMACS 競賽用）
+- `none`：不處理（預設）
+
+---
+
+## 3. 核心演算法 HGS
+
+### 3.1 全名與起源
 
 **HGS = Hybrid Genetic Search（混合遺傳搜尋）**
 
-### 2.2 為什麼叫「混合」？
+由法國學者 Thibaut Vidal 在 2013 年提出（論文：Vidal et al. 2013）。
+PyVRP 在 HGS-CVRP（Vidal 2022）開源實作的基礎上：
+- 新增時間窗支援（VRPTW）
+- 用 Python 重寫外層邏輯
+- 改善 SWAP* 算子加入時間窗 caching
+- 簡化並移除對效能貢獻有限的複雜組件
 
-因為它把兩種技術組合在一起：
+### 3.2 為什麼叫「混合」？
 
 ```
-HGS = 遺傳演算法（GA）+ 局部搜尋（Local Search）
+HGS = 遺傳演算法（Genetic Algorithm）+ 局部搜尋（Local Search）
 ```
 
-- **遺傳演算法** 負責「廣泛探索」：維持一群解，透過交配產生新後代，逃離局部最佳
-- **局部搜尋** 負責「深度改善」：對每個後代做精細調整，快速找到附近的更好解
+- **GA 負責廣泛探索（Exploration）**：維持多解族群，透過交配產生新後代，避免陷入局部最優
+- **局部搜尋負責深度改善（Exploitation）**：對每個後代做精細調整，快速收斂到局部最優
+- 關鍵洞察：純 GA 交配後的後代品質很差；每代緊接著跑局部搜尋能大幅提升效率
 
-### 2.3 演算法起源
+### 3.3 允許不可行解
 
-HGS 由法國學者 Thibaut Vidal 在 2013 年提出（HGS-2012 論文），PyVRP 在此基礎上：
-- 加入時間窗支援（VRPTW）
-- 用 Python 重寫外層邏輯（易擴充）
-- 保留 C++ 實作效能關鍵部分
-- 贏得 2021 DIMACS VRPTW 競賽第一名
-
-### 2.4 為什麼不用純遺傳演算法？
-
-純 GA 的問題：交配後產生的解質量很差，需要大量迭代才能收斂。
-
-HGS 的解法：每產生一個後代就立刻跑局部搜尋，大幅提升解的質量，讓種群整體進化更有效率。
+HGS 的一個重要特性：族群中同時維持**可行解**與**不可行解**。
+不可行解雖然違反容量或時間窗限制，但可能包含很好的路線結構。
+透過**動態懲罰機制**，把硬限制轉成軟約束，讓局部搜尋探索更廣的解空間。
 
 ---
 
-## 3. 演算法完整流程
+## 4. 演算法完整流程
 
-### 3.1 主迴圈示意圖
+### 4.1 主迴圈流程
 
 ```
 初始化
-│
-├─ 隨機生成 25 個初始解（不要求可行）
-├─ 設定懲罰權重（超載罰 20，時間違反罰 6）
-└─ 種群分成兩個子群：可行解 & 不可行解
+├── 隨機生成 min_pop_size（預設 25）個解（不要求可行）
+├── 設定懲罰初始值（容量懲罰 20，時間窗懲罰 6）
+└── 族群分成兩個子群：可行解子群 & 不可行解子群
 
 ↓
 
 主迴圈（重複直到停止條件）
+├── [Step 1] 選親本
+│   └── 從族群用二元競賽（k=2）選兩個解（父母）
+│       同時考慮解的品質（objective）和多樣性（BPD）
 │
-├─ [Step 1] 選親本
-│   └─ 從種群用二元競賽選 2 個親本
-│       （考慮解的好壞 + 解的多樣性）
+├── [Step 2] 交叉（Crossover）
+│   └── SREX 算子：從兩親本各取幾條路線，
+│       合併後用貪心修復缺漏的客戶，產生後代解
 │
-├─ [Step 2] 交叉（Crossover）
-│   └─ SREX 算子：從兩親本各選幾條路線，
-│       合併成一個新解（後代）
+├── [Step 3] 局部搜尋改善後代
+│   ├── Phase 1 - search()：節點操作（11 種，按鄰域掃描）
+│   ├── Phase 2 - intensify()：路線操作（2 種，跨路線）
+│   └── 重複直到無法再改善
 │
-├─ [Step 3] 局部搜尋改善後代
-│   ├─ 節點操作：移動/交換客戶（11 種）
-│   ├─ 路線操作：跨路線移動/交換（2 種）
-│   └─ 重複到無法再改善為止
+├── [Step 4] 修復不可行解（repair_probability 機率，CVRP=50%，VRPTW=80%）
+│   └── 若後代不可行 → 把懲罰暫時乘以 12 倍 → 再跑一次局部搜尋
 │
-├─ [Step 4] 修復不可行解（80% 機率）
-│   └─ 若解不可行，加大懲罰後再跑一次局部搜尋
+├── [Step 5] 加入族群
+│   ├── 可行解加入可行子群，不可行解加入不可行子群
+│   └── 若子群超過 max_size（min_pop_size + generation_size = 25+40=65）
+│       → 淘汰（先刪重複解，再按 biased fitness 淘汰）
+│       → 縮回至 min_pop_size（25）
 │
-├─ [Step 5] 加入種群
-│   └─ 若種群超過上限，淘汰多樣性最低的解
+├── [Step 6] 更新懲罰值（每 50/100 次記錄更新一次）
+│   └── 目標：維持 43% 的解是可行的
+│       可行 < 43% → 懲罰 × penalty_increase（1.25 or 1.34）
+│       可行 > 43% → 懲罰 × penalty_decrease（0.85 or 0.32）
 │
-├─ [Step 6] 更新懲罰權重
-│   └─ 目標維持 43% 的解是可行的
-│       可行太少 → 增加懲罰；可行太多 → 減少懲罰
-│
-└─ [Step 7] 重啟機制
-    └─ 若連續 20,000 次迭代無進展 → 清空種群重新開始
+└── [Step 7] 重啟機制
+    └── 若連續 nb_iter_no_improvement（20,000）次迭代無進展
+        → 清空族群，重新用初始解填充
 
 ↓
 
-輸出：最佳解 + 統計資料
+輸出：Result 物件（最佳解 + 詳細統計數據）
 ```
 
-### 3.2 停止條件（可選擇）
+### 4.2 停止條件
 
-| 類型 | 說明 | 用法 |
-|------|------|------|
-| `MaxRuntime(秒)` | 跑滿指定秒數就停 | 最常用 |
-| `MaxIterations(次)` | 跑滿指定迭代次數 | 測試用 |
-| `NoImprovement(次)` | N 次沒進步就停 | 收斂判斷 |
-| `TimedNoImprovement` | 上兩種組合 | 生產環境 |
+| 類型 | 說明 | 實作位置 |
+|------|------|----------|
+| `MaxRuntime(t)` | 超過 `t` 秒就停 | `stop/MaxRuntime.py` |
+| `MaxIterations(n)` | 超過 `n` 次迭代就停 | `stop/MaxIterations.py` |
+| `NoImprovement(n)` | 連續 `n` 次無改善就停 | `stop/NoImprovement.py` |
+| `TimedNoImprovement` | 時間 + 無改善的組合條件 | `stop/TimedNoImprovement.py` |
 
 ---
 
-## 4. 各模組功能詳解
+## 5. 技術實作詳解
 
-### 4.1 遺傳演算法主程式（`GeneticAlgorithm.py`）
+### 5.1 遺傳演算法主迴圈（`GeneticAlgorithm.py`）
 
-**職責：** 協調整個搜尋流程，就像「指揮官」
+**語言：Python**（邏輯協調，不是效能瓶頸）
 
-```python
-# 核心呼叫
-algo = GeneticAlgorithm(data, pen_manager, rng, pop, ls, srex, init_pop)
-result = algo.run(stop=MaxRuntime(60))
-```
+核心參數（`GeneticAlgorithmParams`）：
 
-**關鍵參數：**
-- `repair_probability = 0.80`：不可行解有 80% 機率嘗試修復
-- `nb_iter_no_improvement = 20_000`：連續 20000 次無進展就重啟
+| 參數 | 預設值 | 說明 |
+|------|--------|------|
+| `repair_probability` | 0.80 (VRPTW) / 0.50 (CVRP) | 對不可行後代嘗試修復的機率 |
+| `nb_iter_no_improvement` | 20,000 | 連續無改善幾次後重啟族群 |
 
----
-
-### 4.2 種群管理（`Population.py`）
-
-**職責：** 管理一群解，維持解的品質與多樣性
-
-**結構：**
-```
-Population
-├─ SubPopulation（可行解子群）
-└─ SubPopulation（不可行解子群）
-```
-
-**為什麼要同時保留不可行解？**
-不可行解雖然違反限制，但可能包含好的路線結構。透過懲罰機制讓演算法「容忍」短暫的不可行，能探索更廣的解空間。
-
-**競賽選擇機制：**
-```
-從種群隨機抽 k=2 個解 → 選出較好的那個（兼顧品質和多樣性）
-```
-
-**Biased Fitness（偏置適應度）：**
-每個解的排名 = 成本排名 × (1-精英比例) + 多樣性排名 × 精英比例
-→ 同時考慮解的好壞和它與其他解的差異性
+重啟機制（論文 Section 4.2）：
+> 每次迭代記錄當前最佳 cost。若連續 20,000 次迭代最佳 cost 沒有改善，清空族群並用初始解重新填充，重新開始搜尋。
 
 ---
 
-### 4.3 懲罰管理（`PenaltyManager.py`）
+### 5.2 局部搜尋（`search/LocalSearch.py` + `search/_search.so`）
 
-**職責：** 動態調整「違反限制的罰分」，讓可行解比例維持在理想範圍
+**Python 部分**：協調搜尋流程
+**C++ 部分**：實際執行每個操作（效能關鍵，佔 80–90% 運行時間）
 
-**核心概念：**
-把「必須可行」的硬限制改成「違反了就加分」的軟限制，讓局部搜尋更靈活地探索。
+#### 5.2.1 兩階段搜尋
 
+**Phase 1 — `search()`（節點操作）**：在稀疏鄰域內對客戶對掃描，找到第一個改善就立刻套用，持續至無改善。
+
+**Phase 2 — `intensify()`（路線操作）**：對所有非空路線對進行更昂貴的跨路線操作。
+
+#### 5.2.2 稀疏鄰域（Granular Neighbourhood）
+
+**問題**：$n$ 個客戶有 $O(n^2)$ 種配對，全部評估太慢。
+**解法**：每個客戶只看最近的 $k$（預設 40）個鄰居，把複雜度從 $O(n^2)$ 降到 $O(kn)$。
+
+**近度計算公式**（Vidal et al. 2013）：
 ```
-目標：維持 43% 的解是可行的
-
-若可行比例 < 43%  →  懲罰 × 1.34（增加壓力，逼解變可行）
-若可行比例 > 43%  →  懲罰 × 0.32（減少壓力，允許探索不可行區域）
-```
-
-**修復 Booster：**
-嘗試修復不可行解時，懲罰臨時乘以 12 倍，讓局部搜尋更積極地修正違反限制。
-
----
-
-### 4.4 局部搜尋（`search/LocalSearch.py`）
-
-**職責：** 對一個解做精細改善，是整個演算法最耗時的部分（佔 80–90% 運行時間）
-
-**兩階段搜尋：**
-```
-search()      → 節點操作（快，先做）
-intensify()   → 路線操作（慢，後做）
+proximity(i, j) = distance(i, j)
+                + weight_wait_time × max(e_j - t_ij - s_i - l_i, 0)
+                + weight_time_warp × max(e_i + s_i + t_ij - l_j, 0)
+                - prize(j)
 ```
 
-#### 節點操作（11 種，C++ 實作）
+其中 `weight_wait_time = 0.2`，`weight_time_warp = 1.0`（VRPTW 預設）。
+CVRP 不使用時間相關項（全設為 0）。
 
-| 操作名稱 | 白話說明 |
-|----------|----------|
-| `Exchange(1,0)` | 把客戶 u 移到另一個位置（重新插入） |
-| `Exchange(2,0)` | 把連續兩個客戶移到另一個位置 |
-| `Exchange(3,0)` | 把連續三個客戶移到另一個位置 |
-| `Exchange(1,1)` | 客戶 u 和客戶 v 互換位置 |
+使用者可以完全替換鄰域結構，或透過 `NeighbourhoodParams` 調整。
+
+#### 5.2.3 節點操作（Node Operators，11 種）
+
+> **共同特性**：每次只考慮客戶 $u$ 和其鄰域 $N(u)$ 中的客戶 $v$。
+
+**(N, M)-exchange 系列**（論文 Section 4.3.1）：
+
+| 算子 | 說明 |
+|------|------|
+| `Exchange(1,0)` | Relocate：把客戶 $u$ 插入到 $v$ 之後（移動） |
+| `Exchange(2,0)` | 把 $u$ 及其後繼客戶一起移動 |
+| `Exchange(3,0)` | 把 $u$ 及其後兩個客戶一起移動 |
+| `Exchange(1,1)` | Swap：$u$ 和 $v$ 互換位置 |
 | `Exchange(2,1)` | 兩客戶序列和一個客戶互換 |
 | `Exchange(2,2)` | 兩客戶序列互換 |
 | `Exchange(3,1)` | 三客戶序列和一個客戶互換 |
 | `Exchange(3,2)` | 三客戶序列和兩客戶序列互換 |
 | `Exchange(3,3)` | 三客戶序列互換 |
-| `MoveTwoClientsReversed` | 移動兩客戶時反轉順序 |
-| `TwoOpt` | 經典 2-OPT：剪斷兩條邊再重接 |
 
-#### 路線操作（2 種，C++ 實作）
+C++ 用 **template 機制**針對每種 (N,M) 組合生成高效的特化實作。
 
-| 操作名稱 | 白話說明 |
-|----------|----------|
-| `RelocateStar (RELOCATE*)` | 在兩條路線之間找最佳的單客戶移動 |
-| `SwapStar (SWAP*)` | 在兩條路線之間找最佳的客戶互換（不限插入位置） |
+**MoveTwoClientsReversed**：
+(2,0)-exchange 的變形，移動 $u$ 及其後繼客戶時，**反轉其順序**後插入 $v$ 之後。
 
-#### Granular Neighborhood（稀疏鄰域）
+**TwoOpt**（論文 Section 4.3.1，精確定義）：
+把路線看成有向圖（弧 $u \to x$ 表示 $x$ 在 $u$ 之後）。
+- **跨路線**：把 $u \to x$ 和 $v \to y$ 替換為 $u \to y$ 和 $v \to x$（重組兩條路線的首尾）
+- **同一路線**（$u$ 在 $v$ 之前）：把 $u \to x$ 和 $v \to y$ 替換為 $u \to v$ 和 $x \to y$（反轉 $x$ 到 $v$ 這段）
 
-**問題：** n 個客戶有 O(n²) 種配對，全部評估太慢。
-**解法：** 每個客戶只看最近的 k=40 個鄰居（考慮距離+時間因素）。
+#### 5.2.4 路線操作（Route Operators，2 種）
 
-**近度計算公式：**
-```
-proximity(i, j) = distance(i,j)
-                + 0.2 × 最短等待時間(i→j)
-                + 1.0 × 最短時間違反(i→j)
-                - prize(j)
-```
+> **共同特性**：對路線對操作，不受鄰域限制，利用 caching 保持效率。
 
----
+**RELOCATE\***（論文 Section 4.3.2）：
+在兩條路線之間找並套用最佳的 (1,0)-exchange（即最佳的單客戶移動）。
 
-### 4.5 交叉算子（`crossover/selective_route_exchange.py`）
+**SWAP\***（論文 Section 4.3.2，Vidal 2022 原創，PyVRP 加強版）：
+考慮兩條路線之間最佳的客戶互換，**但不要求互換的客戶插入對方原本的位置**，而是各自插入另一條路線中最佳的位置。
+PyVRP 相對 Vidal (2022) 的加強：
+1. 加入時間窗支援
+2. 更多 caching 機會
+3. 提早停止評估「已知不好的」移動
 
-**職責：** 從兩個親本解合成一個後代解
+#### 5.2.5 空路線處理
 
-**SREX（Selective Route Exchange）** 由 Nagata & Kobayashi 2010 提出：
-
-```
-1. 從親本 A 隨機選幾條路線
-2. 從親本 B 隨機選幾條路線
-3. 把 A 選的路線放進後代
-4. 用 B 的路線補上未被服務的客戶（貪心插入）
-5. 輸出後代解
-```
-
-**白話：** 讓後代繼承父母各自擅長的「部分路線」，而不是隨機混合。
+節點操作也可以把客戶插入「空車輛的空路線」（unassigned vehicle）。
+為了**不浪費車輛**（最小化使用車輛數），這類插入只在**所有客戶對之間的移動都已窮盡後才評估**。
 
 ---
 
-### 4.6 多樣性指標（`diversity/`）
+### 5.3 族群管理（`Population.py` + `_pyvrp.so` 中的 `SubPopulation`）
 
-**職責：** 計算兩個解之間有多不一樣
+**Python 部分**：族群邏輯（選親本、加入、清空）
+**C++ 部分**：`SubPopulation`（高效存儲和 fitness 計算）
 
-**BPD（Broken Pairs Distance，斷裂配對距離）：**
+#### 5.3.1 雙子群結構
 
 ```
-定義每個解的「配對集合」：{(u,v) | v 在解中緊接著 u}
-
-BPD(解A, 解B) = 在 A 中存在、但在 B 中不存在的配對數量（反向亦算）
+Population
+├── SubPopulation（可行解子群）
+└── SubPopulation（不可行解子群）
 ```
 
-直觀理解：兩個解共享越多相鄰的客戶對，距離越小；差異越大，距離越大。
+新解加入時，根據是否可行分別放入對應子群。
 
----
+#### 5.3.2 Biased Fitness（偏置適應度）
 
-### 4.7 Model 高層介面（`Model.py`）
+每個解的 fitness 綜合考慮**品質**和**多樣性**：
 
-**職責：** 提供簡單易用的 API，讓使用者快速建立問題並求解
+```
+biased_fitness(solution) = rank_quality × (1 - elite_ratio)
+                         + rank_diversity × elite_ratio
+```
+
+- `rank_quality`：按 objective 值排名（越小越好）
+- `rank_diversity`：按與其他解的平均距離排名（越大越好，越孤立越稀有）
+- `elite_ratio = nb_elite / min_pop_size`
+
+「精英解」（elite solutions）在存活者選擇中受到保護。
+
+#### 5.3.3 存活者選擇
+
+當子群超過 `min_pop_size + generation_size`（= 65）時觸發：
+1. 先移除**完全重複**的解
+2. 按 biased fitness 從最差開始淘汰
+3. 縮回至 `min_pop_size`（= 25）
+
+定期的淘汰**提升族群多樣性**（可從論文 Figure 1 的多樣性走勢圖中觀察到）。
+
+#### 5.3.4 親本選擇（k-way Tournament，Kwon et al. 2022）
+
+從族群中隨機抽 $k = 2$ 個解，選 biased fitness 較好的那個。
+選兩次得到兩個親本，同時有多樣性限制：
 
 ```python
-from pyvrp import Model
-from pyvrp.stop import MaxRuntime
-
-m = Model()
-m.add_vehicle_type(capacity=15, num_available=4)  # 車輛
-depot = m.add_depot(x=456, y=320)                 # 倉庫
-client = m.add_client(x=228, y=0, demand=1)       # 客戶
-m.add_edge(depot, client, distance=100)            # 邊（距離）
-
-res = m.solve(stop=MaxRuntime(1))                  # 求解 1 秒
-print(res)                                         # 輸出結果
+# 確保兩個親本的 BPD 多樣性在 [lb_diversity, ub_diversity] 之間
+# 若不符合，最多重試 10 次
+while not (lb_diversity <= bpd(first, second) <= ub_diversity) and tries <= 10:
+    second = tournament_select()
 ```
 
-`m.solve()` 內部自動：建立所有 GA 元件 → 初始化種群 → 跑 HGS → 回傳結果
+---
+
+### 5.4 懲罰管理（`PenaltyManager.py`）
+
+**功能**：動態調整「違反容量」和「違反時間窗」的懲罰係數，讓可行解比例維持在目標值（43%）附近。
+
+#### 5.4.1 目標函數（penalized objective）
+
+```
+penalized_cost = total_distance
+               + capacity_penalty × total_excess_load
+               + time_warp_penalty × total_time_warp
+```
+
+`time_warp`：到達客戶的時間超過 $l_i$ 的總超出量。
+
+#### 5.4.2 懲罰更新邏輯
+
+每收集 `num_registrations_between_penalty_updates` 筆記錄後更新：
+
+```python
+diff = target_feasible - feas_percentage  # 0.43 - 實際可行比例
+
+if -0.05 < diff < 0.05:
+    return penalty  # 在目標附近，不更新
+
+if diff > 0:  # 可行解太少，加大懲罰
+    return min(penalty_increase × penalty + 1, 1000)
+
+else:  # 可行解太多，減少懲罰
+    return max(penalty_decrease × penalty - 1, 1)
+```
+
+懲罰值被限制在 `[1, 1000]` 以避免數值溢位。
+
+#### 5.4.3 修復 Booster
+
+嘗試修復不可行解時，臨時使用更高懲罰（× `repair_booster` = 12 倍），讓局部搜尋更積極地修正約束違反。
 
 ---
 
-### 4.8 統計模組（`Statistics.py`）
+### 5.5 SREX 交叉算子（`crossover/selective_route_exchange.py` + `_crossover.so`）
 
-每次迭代自動收集：
+**SREX（Selective Route Exchange）**，由 Nagata & Kobayashi (2010) 提出。
 
-| 統計項 | 說明 |
-|--------|------|
-| 迭代時間 | 每次迭代耗費多少秒 |
-| 可行解子群大小 | 目前有幾個可行解 |
-| 不可行解子群大小 | 目前有幾個不可行解 |
-| 最佳成本 | 目前找到的最好解 |
-| 平均成本 | 種群平均解的成本 |
-| 平均多樣性 | 種群內解的差異度 |
-| 平均路線數 | 平均使用幾台車 |
+**核心思想**：讓後代繼承父母各自「擅長的部分路線」，而非隨機混合。
+
+**詳細步驟**（Python 包裝 + C++ 執行）：
+
+```
+1. 從親本 A 的路線中，隨機選一個起始路線索引 idx1
+2. 從親本 B 的路線中，選對應索引 idx2（若 A 路線數 < B，idx2 = 0）
+3. 決定要移動幾條路線：randint(min(A路線數, B路線數)) + 1
+4. 把 B 選定的幾條路線「插入」後代（繼承 B 的這些路線）
+5. 用 A 的路線補上後代中「尚未被服務的客戶」（greedy repair）
+6. 輸出後代解
+```
+
+若親本之一有空解（num_clients=0），直接返回另一個親本。
 
 ---
 
-## 5. 程式碼架構總覽
+### 5.6 多樣性指標 BPD（`diversity/_diversity.so`）
+
+**BPD（Broken Pairs Distance，斷裂配對距離）**：量化兩個解有多不一樣。
+
+**定義**：
+```
+對解 A，定義其「配對集合」PA = {(u, v) | v 緊接在 u 之後出現在某路線中}
+
+BPD(A, B) = |PA △ PB| / (2n)
+           = 在 A 中有、但 B 中沒有的配對數（含逆向）/ (2 × 客戶數)
+```
+
+直觀理解：兩個解共享越多「相鄰的客戶對」，距離越小；差異越大，距離越大，值域 $[0, 1]$。
+使用者可以替換為自己實作的多樣性函數（只要符合相同介面）。
+
+---
+
+## 6. 程式碼架構
+
+### 6.1 目錄結構
 
 ```
 pyvrp/
 │
-├── Model.py              ← 使用者入口，高層 API
-├── GeneticAlgorithm.py   ← GA 主迴圈
-├── Population.py         ← 種群管理
-├── PenaltyManager.py     ← 動態懲罰
-├── Statistics.py         ← 統計收集
-├── Result.py             ← 結果封裝
-├── constants.py          ← 全域常數
+├── Model.py              ← 使用者高層入口（建立問題 + 一鍵求解）
+├── GeneticAlgorithm.py   ← HGS 主迴圈（Python）
+├── Population.py         ← 族群管理邏輯（Python）
+├── PenaltyManager.py     ← 動態懲罰管理（Python）
+├── Statistics.py         ← 每次迭代統計收集（Python）
+├── Result.py             ← 結果封裝（Python）
+├── read.py               ← 讀取 VRPLIB/Solomon 格式（Python）
+├── cli.py                ← 命令列介面（Python）
+├── constants.py          ← 全域常數（MAX_VALUE 等）
 │
-├── _pyvrp.so             ← C++ 核心（ProblemData, Solution, CostEvaluator...）
+├── _pyvrp.so             ← C++ 核心擴充
+│   包含：ProblemData, Solution, Client, VehicleType,
+│          CostEvaluator, RandomNumberGenerator,
+│          PopulationParams, SubPopulation
 │
 ├── search/
-│   ├── LocalSearch.py    ← 局部搜尋主程式（Python）
-│   ├── neighbourhood.py  ← 稀疏鄰域計算
-│   └── _search.so        ← C++ 操作符（Exchange, TwoOpt, SwapStar...）
+│   ├── LocalSearch.py    ← 局部搜尋流程（Python）
+│   ├── SearchMethod.py   ← 搜尋方法介面定義（Python）
+│   ├── neighbourhood.py  ← 稀疏鄰域計算（Python）
+│   └── _search.so        ← C++ 操作符（Exchange系列, TwoOpt,
+│                              MoveTwoClientsReversed, RELOCATE*, SWAP*）
 │
 ├── crossover/
 │   ├── selective_route_exchange.py  ← SREX Python 包裝
@@ -349,202 +464,642 @@ pyvrp/
 │
 ├── diversity/
 │   ├── __init__.py       ← BPD Python 介面
-│   └── _diversity.so     ← C++ BPD 實作
+│   └── _diversity.so     ← C++ BPD 計算
 │
 ├── stop/
-│   ├── MaxRuntime.py
-│   ├── MaxIterations.py
-│   ├── NoImprovement.py
-│   └── TimedNoImprovement.py
+│   ├── MaxRuntime.py          ← 時間限制停止條件
+│   ├── MaxIterations.py       ← 迭代次數限制
+│   ├── NoImprovement.py       ← 無改善停止
+│   ├── TimedNoImprovement.py  ← 組合條件
+│   └── StoppingCriterion.py   ← 停止條件介面定義
 │
-└── plotting/             ← 視覺化工具
+└── plotting/
+    ├── plot_solution.py       ← 繪製最佳解路線圖
+    ├── plot_result.py         ← 繪製完整結果（路線+統計）
+    ├── plot_objectives.py     ← 繪製目標值收斂曲線
+    ├── plot_diversity.py      ← 繪製多樣性走勢
+    ├── plot_runtimes.py       ← 繪製迭代耗時
+    ├── plot_coordinates.py    ← 繪製座標分布
+    ├── plot_demands.py        ← 繪製需求量分布
+    ├── plot_time_windows.py   ← 繪製時間窗分布
+    ├── plot_route_schedule.py ← 繪製路線時間排程
+    └── plot_instance.py       ← 繪製問題實例概覽
 ```
 
-**Python vs C++ 分工：**
+### 6.2 Python vs C++ 分工
 
-| 部分 | 語言 | 原因 |
+| 模組 | 語言 | 理由 |
 |------|------|------|
-| GA 主迴圈、種群管理 | Python | 邏輯複雜但不是效能瓶頸，需要易於修改 |
-| 局部搜尋操作符 | C++ | 每次迭代呼叫數萬次，必須快 |
-| 解的資料結構（Solution） | C++ | 頻繁存取，需要低記憶體開銷 |
-| 交叉算子核心 | C++ | 計算密集 |
-| 多樣性計算 | C++ | 需快速比較大量解對 |
+| GA 主迴圈 | Python | 邏輯複雜但呼叫頻率低，需要易於使用者替換 |
+| 族群管理（Population） | Python（邏輯） + C++（SubPopulation） | 混合：邏輯在 Python，存取頻繁的資料在 C++ |
+| 懲罰管理 | Python | 每 50/100 次才更新一次，不是瓶頸 |
+| 局部搜尋操作符 | C++ | 每次迭代呼叫數萬次，是主要瓶頸（80–90% 時間） |
+| Solution 資料結構 | C++ | 頻繁讀寫，需低記憶體開銷 |
+| SREX 交叉算子核心 | C++ | 計算密集 |
+| BPD 多樣性計算 | C++ | 需快速比較大量解對 |
+| 鄰域計算（`compute_neighbours`） | Python + NumPy | 只在初始化時執行一次 |
 
 ---
 
-## 5.5 完整參數設定（附錄 A，論文 Table 3）
+## 7. 完整 API 使用方式
 
-> 這是論文實驗中實際使用的參數，CVRP 與 VRPTW 略有不同。
+### 7.1 Model 高層介面（最簡單，對應論文 Listing 1）
 
-| 類別 | 參數 | CVRP | VRPTW |
-|------|------|------|-------|
-| **遺傳演算法** | 修復機率 | 50% | **80%** |
-| | 無進展重啟閾值 | 20,000 次 | 20,000 次 |
-| **種群** | 最小種群規模 | 25 | 25 |
-| | 種群生成規模（最大） | 40 | 40 |
-| | 精英解數量 | 4 | 4 |
-| | 接近解數量（多樣性用） | 5 | 5 |
-| | 多樣性下界 | 0.1 | 0.1 |
-| | 多樣性上界 | 0.5 | 0.5 |
-| **懲罰管理** | 初始容量懲罰 | 20 | 20 |
-| | 初始時間違反懲罰 | — | **6** |
-| | 修復增幅倍數 | 12 | 12 |
-| | 更新間隔（記錄次數） | 100 | **50** |
-| | 懲罰增加倍率 | 1.25 | **1.34** |
-| | 懲罰減少倍率 | 0.85 | **0.32** |
-| | 目標可行比例 | 43% | 43% |
-| **局部搜尋** | 鄰域大小 | **20** | **40** |
-| | 等待時間權重 | — | 0.2 |
-| | 時間違反權重 | — | 1.0 |
-| | 對稱近度 | True | True |
-| | 對稱鄰域 | **True** | **False** |
-| **操作符啟用** | Relocate 類 (1,0)(2,0)(3,0)+MTC | ✓ | ✓ |
-| | Swap 類 (1,1)(2,1)(2,2)(3,2)(3,3) | ✓ | ✓ |
-| | 2-OPT | ✓ | ✓ |
-| | RELOCATE* | ✓ | ✓ |
-| | SWAP* | ✓ | ✓ |
+**適合**：直接想用 PyVRP 求解，不需要客製化演算法。
 
-**CVRP vs VRPTW 主要差異：**
-- VRPTW 鄰域更大（40 vs 20），因為時間窗讓空間近的客戶不一定時間兼容
-- VRPTW 懲罰調整更激進（增加 1.34 vs 1.25；減少 0.32 vs 0.85）
-- VRPTW 更新更頻繁（每 50 次 vs 每 100 次），適應快速變化的可行性
+```python
+import numpy as np
+from pyvrp import Model
+from pyvrp.stop import MaxRuntime
+
+# ── 建立問題實例 ──────────────────────────────────────
+
+m = Model()
+
+# 新增車型：capacity（容量）必填，num_available（車輛數）必填
+m.add_vehicle_type(capacity=15, num_available=4)
+
+# 新增倉庫（只能有一個）
+# x, y：座標（整數）
+# tw_early, tw_late：倉庫時間窗（選填，預設 0/0）
+depot = m.add_depot(x=456, y=320)
+
+# 新增客戶（所有參數除 x, y 外均有預設值）
+# x, y             : 座標（整數，必填）
+# demand           : 需求量（預設 0）
+# service_duration : 服務時間（預設 0）
+# tw_early         : 時間窗最早（預設 0）
+# tw_late          : 時間窗最晚（預設 0，= 無限制）
+# release_time     : 最早可出發時間（預設 0）
+# prize            : 訪問獎賞值（預設 0，= 非獎賞型）
+# required         : 是否必須訪問（預設 True）
+c1 = m.add_client(x=228, y=0, demand=3, service_duration=10,
+                  tw_early=100, tw_late=200)
+c2 = m.add_client(x=912, y=500, demand=5)
+
+# 新增邊：distance（距離）必填，duration（時間）選填（預設 0）
+# 若不設邊，預設距離 = MAX_VALUE（等同不可通行）
+m.add_edge(depot, c1, distance=100, duration=100)
+m.add_edge(depot, c2, distance=200, duration=200)
+m.add_edge(c1, c2, distance=120, duration=120)
+# 注意：需要設定所有你想讓車走的方向（有向圖）
+
+# ── 求解 ──────────────────────────────────────────────
+
+# stop：停止條件（必填）
+# seed：隨機種子（選填，預設 0，影響可重複性）
+result = m.solve(stop=MaxRuntime(5.0), seed=42)
+print(result)
+```
+
+**`m.solve()` 內部自動完成**：
+1. 建立 `ProblemData`
+2. 建立 `RandomNumberGenerator`
+3. 建立 `LocalSearch` + 加入所有預設操作符
+4. 建立 `PenaltyManager`
+5. 建立 `Population`
+6. 生成初始隨機解
+7. 建立 `GeneticAlgorithm` 並 `run(stop)`
+8. 返回 `Result`
+
+### 7.2 底層完整組裝方式（對應論文 Listing 2）
+
+**適合**：想客製化各個組件（替換交叉算子、修改操作符等）。
+
+```python
+from pyvrp import (
+    GeneticAlgorithm, GeneticAlgorithmParams,
+    PenaltyManager, PenaltyParams,
+    Population, PopulationParams,
+    RandomNumberGenerator, Solution
+)
+from pyvrp.crossover import selective_route_exchange as srex
+from pyvrp.diversity import broken_pairs_distance as bpd
+from pyvrp.search import (
+    NODE_OPERATORS, ROUTE_OPERATORS,
+    LocalSearch, NeighbourhoodParams, compute_neighbours
+)
+from pyvrp.stop import MaxRuntime
+from pyvrp.read import read
+
+# 1. 讀取問題資料
+data = read("RC2_10_5.txt", instance_format="solomon", round_func="dimacs")
+
+# 2. 建立隨機數生成器
+rng = RandomNumberGenerator(seed=42)
+
+# 3. 建立局部搜尋
+nb_params = NeighbourhoodParams(
+    weight_wait_time=0.2,       # 等待時間的近度權重
+    weight_time_warp=1.0,       # 時間窗違反的近度權重
+    nb_granular=40,             # 每個客戶的鄰居數
+    symmetric_proximity=True,   # 對稱化 proximity 矩陣
+    symmetric_neighbours=False, # 是否對稱化鄰域結構
+)
+neighbours = compute_neighbours(data, nb_params)
+ls = LocalSearch(data, rng, neighbours)
+
+# 加入節點操作符（可以只加你需要的）
+for op in NODE_OPERATORS:
+    ls.add_node_operator(op(data))
+
+# 加入路線操作符
+for op in ROUTE_OPERATORS:
+    ls.add_route_operator(op(data))
+
+# 4. 建立懲罰管理器
+pen_params = PenaltyParams(
+    init_capacity_penalty=20,
+    init_time_warp_penalty=6,
+    repair_booster=12,
+    num_registrations_between_penalty_updates=50,
+    penalty_increase=1.34,
+    penalty_decrease=0.32,
+    target_feasible=0.43,
+)
+pen_manager = PenaltyManager(pen_params)
+
+# 5. 建立族群
+pop_params = PopulationParams(
+    min_pop_size=25,
+    generation_size=40,
+    nb_elite=4,
+    nb_close=5,
+    lb_diversity=0.1,
+    ub_diversity=0.5,
+)
+pop = Population(bpd, pop_params)  # bpd 可以替換為自己的多樣性函數
+
+# 6. 生成初始解
+init_pop = [Solution.make_random(data, rng) for _ in range(pop_params.min_pop_size)]
+
+# 7. 建立並執行 GA
+gen_params = GeneticAlgorithmParams(
+    repair_probability=0.80,
+    nb_iter_no_improvement=20_000,
+)
+algo = GeneticAlgorithm(data, pen_manager, rng, pop, ls, srex, init_pop, gen_params)
+result = algo.run(stop=MaxRuntime(60))
+
+# 8. 視覺化（需要 matplotlib）
+from pyvrp.plotting import plot_result
+plot_result(result, data)
+```
+
+### 7.3 從檔案讀取問題實例
+
+```python
+from pyvrp.read import read
+
+# VRPLIB 格式（CVRP 標準格式，如 CVRPLIB 網站的 .vrp 檔）
+data = read("instance.vrp",
+            instance_format="vrplib",  # "vrplib" 或 "solomon"
+            round_func="round")        # "round", "trunc", "trunc1"/"dimacs", "none"
+
+# Solomon 格式（VRPTW 標準格式，如 C101.txt）
+data = read("C101.txt", instance_format="solomon", round_func="trunc1")
+
+# 從 ProblemData 重建 Model（可進一步修改再求解）
+from pyvrp import Model
+m = Model.from_data(data)
+result = m.solve(stop=MaxRuntime(10))
+```
+
+### 7.4 命令列介面（CLI）
+
+```bash
+# 啟動虛擬環境
+source .venv/bin/activate
+
+# 基本使用（必填：instances路徑、--seed、--max_runtime 或 --max_iterations）
+python -m pyvrp instance.vrp --seed 42 --max_runtime 10
+
+# Solomon 格式 + DIMACS 精度
+python -m pyvrp C101.txt --seed 42 --max_runtime 60 \
+    --instance_format solomon --round_func dimacs
+
+# 儲存結果（--stats_dir 存 CSV 統計；--sol_dir 存最佳解）
+python -m pyvrp instance.vrp --seed 42 --max_runtime 10 \
+    --stats_dir ./stats/ --sol_dir ./solutions/
+
+# 使用 TOML 設定檔覆蓋超參數
+python -m pyvrp instance.vrp --seed 42 --max_runtime 10 \
+    --config_loc config.toml
+
+# 批次求解多個實例（多核心）
+python -m pyvrp data/*.vrp --seed 42 --max_runtime 60 --num_procs 4
+```
+
+**TOML 設定檔範例（`config.toml`）**：
+```toml
+[genetic]
+repair_probability = 0.80
+nb_iter_no_improvement = 20000
+
+[penalty]
+init_capacity_penalty = 20
+init_time_warp_penalty = 6
+repair_booster = 12
+num_registrations_between_penalty_updates = 50
+penalty_increase = 1.34
+penalty_decrease = 0.32
+target_feasible = 0.43
+
+[population]
+min_pop_size = 25
+generation_size = 40
+nb_elite = 4
+nb_close = 5
+lb_diversity = 0.1
+ub_diversity = 0.5
+
+[neighbourhood]
+weight_wait_time = 0.2
+weight_time_warp = 1.0
+nb_granular = 40
+symmetric_proximity = true
+symmetric_neighbours = false
+
+# 可選：自訂要使用的操作符（預設全開）
+# [node_ops]  → 列出想要的，如 ["Exchange10", "TwoOpt"]
+# [route_ops] → 列出想要的，如 ["SwapStar"]
+```
+
+### 7.5 停止條件
+
+```python
+from pyvrp.stop import MaxRuntime, MaxIterations, NoImprovement, TimedNoImprovement
+
+# 最多跑 5 秒
+stop = MaxRuntime(5.0)
+
+# 最多跑 10,000 次迭代
+stop = MaxIterations(10_000)
+
+# 連續 5,000 次無改善就停
+stop = NoImprovement(5_000)
+
+# 組合：最多跑 60 秒，且最多無改善 5,000 次（先到先停）
+stop = TimedNoImprovement(max_runtime=60, max_no_improvement=5_000)
+```
+
+### 7.6 讀取與視覺化結果
+
+```python
+result = m.solve(stop=MaxRuntime(5))
+
+# ── 基本資訊 ──
+print(result)                       # 完整摘要
+print(result.cost())                # 最佳解總距離（不可行時回傳 inf）
+print(result.is_feasible())         # 是否可行
+print(result.num_iterations)        # 總迭代次數
+print(result.runtime)               # 執行秒數
+
+# ── 最佳解內容 ──
+sol = result.best
+print(sol.num_routes())             # 使用幾條路線（幾台車）
+print(sol.num_clients())            # 服務了幾個客戶
+print(sol.has_excess_load())        # 是否超載
+print(sol.has_time_warp())          # 是否有時間窗違反
+
+for route in sol.get_routes():
+    print(route.visits())           # 該路線訪問的客戶 index 列表
+
+# ── 統計數據 ──
+stats = result.stats
+# stats 包含每次迭代的：時間、可行/不可行子群大小、最佳/平均成本、多樣性、路線數
+
+# ── 視覺化（需要 matplotlib）──
+import matplotlib.pyplot as plt
+from pyvrp.plotting import plot_result, plot_solution, plot_objectives, plot_diversity
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+plot_result(result, data)           # 完整四圖（多樣性+目標值+迭代耗時+路線）
+plt.show()
+```
+
+**`print(result)` 輸出範例**：
+```
+Solution results
+================
+    # routes: 3
+   # clients: 9
+   objective: 1234.56
+# iterations: 15234
+    run-time: 5.00 seconds
+
+Routes
+------
+Route #1: 1 4 7
+Route #2: 2 5 8
+Route #3: 3 6 9
+```
 
 ---
 
-## 6. 效能表現
+## 8. 所有可調整的超參數
 
-### 6.1 CVRP 基準測試（X benchmark, 100 個實例）
+> 整合論文附錄 A（Table 3）+ 程式碼預設值 + CVRP/VRPTW 差異
 
-| 求解器 | 平均解與最優解的差距 |
-|--------|---------------------|
-| PyVRP | **0.22%** |
-| HGS-2012 | 0.21% |
-| HGS-CVRP（專用） | 0.11% |
+### 8.1 `GeneticAlgorithmParams`
 
-→ PyVRP 雖非專為 CVRP 設計，效能仍與頂尖專用求解器相當
+| 參數 | CVRP | VRPTW | 說明 |
+|------|------|-------|------|
+| `repair_probability` | 0.50 | **0.80** | 不可行後代嘗試修復的機率 |
+| `nb_iter_no_improvement` | 20,000 | 20,000 | 連續無改善次數後重啟族群 |
 
-### 6.2 VRPTW 基準測試（Homberger & Gehring, 1000 客戶）
+### 8.2 `PopulationParams`
 
-| 求解器 | 平均解與最優解的差距 |
-|--------|---------------------|
-| PyVRP | **0.40%** |
-| HGS-DIMACS（競賽版） | 0.32% |
-| DIMACS 參考解 | 0.29% |
+| 參數 | 值（CVRP = VRPTW） | 說明 |
+|------|---------------------|------|
+| `min_pop_size` | 25 | 最小族群大小（每代保留的解數） |
+| `generation_size` | 40 | 每代可額外容納的解數（超過觸發淘汰） |
+| `nb_elite` | 4 | 精英解數量（biased fitness 計算用） |
+| `nb_close` | 5 | 計算多樣性排名時考慮最近幾個解 |
+| `lb_diversity` | 0.1 | 選親本時多樣性下界（BPD ≥ 0.1） |
+| `ub_diversity` | 0.5 | 選親本時多樣性上界（BPD ≤ 0.5） |
 
-→ 競賽版本針對特定題組過度調參，PyVRP 更通用且仍達到頂尖水準。
+最大族群大小 = `min_pop_size + generation_size` = 65
 
-### 6.3 重要成就
+### 8.3 `PenaltyParams`
 
-- 2021 DIMACS VRPTW 競賽：**第一名**
-- EURO meets NeurIPS 2022 VRP 競賽靜態組：**第一名**
-- 還改善了 300 個 Homberger & Gehring 實例中的 27 個 BKS（歷史最佳解）
+| 參數 | CVRP | VRPTW | 說明 |
+|------|------|-------|------|
+| `init_capacity_penalty` | 20 | 20 | 超載懲罰初始值（每單位超量加幾分） |
+| `init_time_warp_penalty` | — | **6** | 時間違反懲罰初始值 |
+| `repair_booster` | 12 | 12 | 修復時懲罰暫時放大的倍數 |
+| `num_registrations_between_penalty_updates` | **100** | **50** | 多少次記錄後更新懲罰 |
+| `penalty_increase` | **1.25** | **1.34** | 可行解太少時懲罰增加倍率（≥ 1） |
+| `penalty_decrease` | **0.85** | **0.32** | 可行解太多時懲罰減少倍率（∈ [0,1]） |
+| `target_feasible` | 0.43 | 0.43 | 目標可行解比例（43%） |
 
-### 6.3 完整實驗數據摘要（附錄 B & C）
+**CVRP vs VRPTW 差異說明**：
+- VRPTW 懲罰調整**更激進**（increase 1.34 vs 1.25；decrease 0.32 vs 0.85）
+- VRPTW 更新**更頻繁**（每 50 次 vs 100 次），需要對快速變化的可行性更敏感
 
-**CVRP（附錄 B）：** 100 個 X benchmark 實例（100 到 1001 個客戶）
+### 8.4 `NeighbourhoodParams`
 
-| 規模範圍 | PyVRP 平均 Gap | 觀察 |
-|----------|---------------|------|
+| 參數 | CVRP | VRPTW | 說明 |
+|------|------|-------|------|
+| `nb_granular` | **20** | **40** | 每個客戶的鄰居數（鄰域大小） |
+| `weight_wait_time` | — | 0.2 | 等待時間在近度計算的權重 |
+| `weight_time_warp` | — | 1.0 | 時間窗衝突在近度計算的權重 |
+| `symmetric_proximity` | True | True | 是否對稱化 proximity 矩陣 |
+| `symmetric_neighbours` | **True** | **False** | 是否對稱化鄰域結構 |
+
+**CVRP vs VRPTW 差異說明**：
+- VRPTW 鄰域更大（40 vs 20）：時間窗使得空間近的客戶不一定時間兼容，需要更大的候選集合
+- VRPTW 鄰域不對稱：時間窗的方向性使得 $i$ 到 $j$ 的訪問可行性不等於 $j$ 到 $i$
+
+### 8.5 Model API 中的客戶/倉庫參數
+
+**`add_client()` 完整參數**：
+
+| 參數 | 型別 | 預設 | 說明 |
+|------|------|------|------|
+| `x` | int | 必填 | X 座標 |
+| `y` | int | 必填 | Y 座標 |
+| `demand` | int | 0 | 需求量（≥ 0） |
+| `service_duration` | int | 0 | 服務時間（≥ 0） |
+| `tw_early` | int | 0 | 時間窗最早（最早可以開始服務） |
+| `tw_late` | int | 0 | 時間窗最晚（不可遲到） |
+| `release_time` | int | 0 | 貨物最早可出發的時間 |
+| `prize` | int | 0 | 訪問獎賞（非零時客戶變成非必訪） |
+| `required` | bool | True | 是否必須被訪問（prize=0 時預設 True） |
+
+**`add_depot()` 完整參數**：
+
+| 參數 | 型別 | 預設 | 說明 |
+|------|------|------|------|
+| `x` | int | 必填 | X 座標 |
+| `y` | int | 必填 | Y 座標 |
+| `tw_early` | int | 0 | 倉庫可出發的最早時間 |
+| `tw_late` | int | 0 | 所有路線必須在此時間前回到倉庫 |
+
+**`add_edge()` 完整參數**：
+
+| 參數 | 型別 | 預設 | 說明 |
+|------|------|------|------|
+| `frm` | Client/Depot | 必填 | 起點（必須是 `add_client`/`add_depot` 的返回值） |
+| `to` | Client/Depot | 必填 | 終點 |
+| `distance` | int | 必填 | 行駛距離（≥ 0） |
+| `duration` | int | 0 | 行駛時間（≥ 0，不設則不考慮時間） |
+
+**`add_vehicle_type()` 完整參數**：
+
+| 參數 | 型別 | 預設 | 說明 |
+|------|------|------|------|
+| `capacity` | int | 必填 | 單台車的容量上限（≥ 0） |
+| `num_available` | int | 必填 | 可使用的車輛數量（> 0） |
+
+### 8.6 完整參數速查表
+
+| 分類 | 參數 | CVRP 預設 | VRPTW 預設 |
+|------|------|-----------|------------|
+| **GA** | `repair_probability` | 0.50 | 0.80 |
+| | `nb_iter_no_improvement` | 20,000 | 20,000 |
+| **族群** | `min_pop_size` | 25 | 25 |
+| | `generation_size` | 40 | 40 |
+| | `nb_elite` | 4 | 4 |
+| | `nb_close` | 5 | 5 |
+| | `lb_diversity` | 0.1 | 0.1 |
+| | `ub_diversity` | 0.5 | 0.5 |
+| **懲罰** | `init_capacity_penalty` | 20 | 20 |
+| | `init_time_warp_penalty` | — | 6 |
+| | `repair_booster` | 12 | 12 |
+| | `num_reg_between_updates` | 100 | 50 |
+| | `penalty_increase` | 1.25 | 1.34 |
+| | `penalty_decrease` | 0.85 | 0.32 |
+| | `target_feasible` | 0.43 | 0.43 |
+| **鄰域** | `nb_granular` | 20 | 40 |
+| | `weight_wait_time` | 0 | 0.2 |
+| | `weight_time_warp` | 0 | 1.0 |
+| | `symmetric_proximity` | True | True |
+| | `symmetric_neighbours` | True | False |
+| **停止** | `MaxRuntime(t)` | 論文用 n×240/100 秒 | 論文用 2 小時 |
+
+---
+
+## 9. 效能表現
+
+### 9.1 實驗設定（論文 Section 6）
+
+**硬體**：AMD EPYC 7H12 CPU，PassMark 單核效能 2014 分
+**方法**：每個實例 10 個不同隨機種子，報告平均結果
+**比較基準**：以 PassMark 分數正規化時間限制（補償 CPU 速度差異）
+
+**CVRP 時間限制**：
+```
+T_max = n × 240/100 秒
+（100 客戶 → 4 分鐘；1000 客戶 → 40 分鐘）
+```
+**VRPTW 時間限制**：2 小時（1000 客戶實例，DIMACS 競賽慣例）
+
+### 9.2 CVRP 結果（Table 1 & 4，Uchoa et al. 2017 X benchmark，100 個實例）
+
+| 求解器 | 平均成本 | Mean Gap | Gap of Mean |
+|--------|---------|----------|-------------|
+| **PyVRP** | **63,275.5** | **0.22%** | **0.27%** |
+| HGS-2012 | 63,285.8 | 0.21% | 0.28% |
+| HGS-CVRP | 63,206.1 | 0.11% | 0.16% |
+| BKS（最佳已知解） | 63,106.7 | 0.00% | 0.00% |
+
+按實例規模分析（Table 4 摘要）：
+
+| 規模 | PyVRP 平均 Gap | 觀察 |
+|------|---------------|------|
 | 小型（100–200 客戶） | ≈ 0.0–0.1% | 多數直接找到最優解 |
 | 中型（200–500 客戶） | ≈ 0.1–0.3% | 偶爾比 HGS-CVRP 略差 |
 | 大型（500–1001 客戶） | ≈ 0.3–0.9% | 差距隨規模增大，但仍具競爭力 |
 
-**VRPTW（附錄 C）：** 60 個 1000 客戶實例（C1, C2, R1, R2, RC1, RC2 各 10 個）
+結論（論文原文）：
+> *"Despite the fact that PyVRP has not been specifically designed for the CVRP, these gaps are only slightly higher than the gaps of specialised CVRP solvers."*
+
+### 9.3 VRPTW 結果（Table 2 & 5，Homberger & Gehring 1999，1000 客戶，60 個實例）
+
+| 求解器 | 平均成本 | Mean Gap | Gap of Mean |
+|--------|---------|----------|-------------|
+| **PyVRP** | **33,296.4** | **0.40%** | **0.46%** |
+| HGS-DIMACS | 33,265.5 | 0.32% | 0.37% |
+| DIMACS 參考解 | 33,245.1 | 0.29% | 0.31% |
+| BKS | 33,143.8 | 0.00% | 0.00% |
+
+按問題類型分析（Table 5 摘要）：
 
 | 類型 | 說明 | PyVRP 平均 Gap |
 |------|------|---------------|
-| C1/C2 | 客戶分群、窄/寬時間窗 | ≈ 0.0–0.1% |
-| R1/R2 | 客戶隨機分布 | ≈ 0.4–0.9% |
-| RC1/RC2 | 混合型 | ≈ 0.2–1.0% |
+| C1 | 客戶分群，窄時間窗 | ≈ 0.0–0.05% |
+| C2 | 客戶分群，寬時間窗 | ≈ 0.0–0.1% |
+| R1 | 客戶隨機分布，窄時間窗 | ≈ 0.4–0.9% |
+| R2 | 客戶隨機分布，寬時間窗 | ≈ 0.1–0.5% |
+| RC1 | 混合型，窄時間窗 | ≈ 0.3–1.0% |
+| RC2 | 混合型，寬時間窗 | ≈ 0.1–0.5% |
 
-C 類型最容易，PyVRP 幾乎完美；R 類型（隨機分布）最難，Gap 較高但仍在 1% 以內。
+**與競賽版本的差距原因**（論文原文）：
+> *"The difference in performance can be explained by the simplified implementation of PyVRP."*
+PyVRP 移除了一些複雜組件（這些組件對競賽特定題組有用但難以維護），因此略差於競賽版本，但更簡潔、通用、可維護。
 
----
-
-## 7. 與其他求解器比較
-
-| 求解器 | 語言 | 效能 | 易用性 | 可擴充 | 授權 |
-|--------|------|------|--------|--------|------|
-| **PyVRP** | Python+C++ | ★★★★★ | ★★★★★ | ★★★★★ | MIT |
-| HGS-CVRP | 純 C++ | ★★★★★ | ★★☆☆☆ | ★★☆☆☆ | MIT |
-| LKH-3 | C | ★★★★☆ | ★★☆☆☆ | ★☆☆☆☆ | 僅學術 |
-| OR-Tools | C++/Python | ★★★☆☆ | ★★★★☆ | ★★★★☆ | Apache |
-| VRPSolver | C++/Python | ★★★★★（精確解） | ★★★☆☆ | ★★★☆☆ | 僅學術 |
-
-PyVRP 的獨特之處：**頂尖效能 + Python 易用性 + 完整文件 + 開放授權**，三者兼顧。
+**延長運算的成果**：
+> PyVRP 在延長運算下改善了 300 個 H&G 實例中的 **27 個 BKS（歷史最佳解）**。
 
 ---
 
-## 8. 對應到你的期中報告
+## 10. 與其他求解器比較
 
-### 8.1 從 PyVRP 到你的純 Python GA 解 TSP
+（對應論文 Section 3，Related Projects）
 
-TSP（旅行推銷員問題）是 VRP 的特例：只有一台車、容量無限、只有一個人要跑完所有點。
+| 求解器 | 語言 | 效能 | 易用性 | 可擴充 | 授權 | 特點 |
+|--------|------|------|--------|--------|------|------|
+| **PyVRP** | Python+C++ | ★★★★★ | ★★★★★ | ★★★★★ | MIT | 效能+易用+可擴充三者兼顧 |
+| HGS-CVRP | 純 C++ | ★★★★★ | ★★☆☆☆ | ★★☆☆☆ | MIT | 純 CVRP 最快，但客製化需改 C++ |
+| LKH-3 | C | ★★★★☆ | ★★☆☆☆ | ★☆☆☆☆ | 僅學術 | 把 VRP 轉成 TSP 求解；不可商用 |
+| VROOM | C++ | ★★★☆☆ | ★★★☆☆ | ★★★☆☆ | 開源 | 整合真實地圖路由；效能不頂尖 |
+| OR-Tools | C++/Python | ★★★☆☆ | ★★★★☆ | ★★★★☆ | Apache | Google 出品；constraint programming；效能差頂尖甚遠 |
+| VRPSolver | C++/Julia/Python | ★★★★★（精確解） | ★★★☆☆ | ★★★☆☆ | 僅學術 | 精確解；只能處理數百客戶以內 |
+| A VRP Solver | Rust | 不明 | ★★★☆☆ | ★★★☆☆ | Apache 2.0 | 多變型支援；缺乏標準 benchmark 數據 |
 
-| HGS（PyVRP） | 你的簡化版 GA-TSP |
-|-------------|-----------------|
-| 多輛車路線 | 單一環形路徑 |
-| SREX 交叉 | 可改用 OX（順序交叉）或 PMX |
-| 11 種局部搜尋操作 | 可只用 2-OPT |
-| 動態懲罰管理 | 不需要（TSP 解天然可行） |
-| 可行/不可行雙子群 | 單一種群即可 |
-| BPD 多樣性 | 可用漢明距離或邊集差異 |
+PyVRP 的獨特之處：**頂尖效能 + Python 易用性 + MIT 開放授權 + 完整測試/文件**，四者同時兼顧。
 
-### 8.2 建議實作順序
+---
+
+## 11. 如何延伸 PyVRP
+
+（對應論文 Section 5.3，Extending PyVRP）
+
+### 11.1 延伸流程
+
+若要支援新的 VRP 變型（例如加入電動車充電限制），大致步驟：
+
+1. **確定是硬限制還是軟限制**
+   - 硬限制：可能需要修改 C++ 資料結構（`ProblemData`、`Solution`）
+   - 軟限制：通常只需修改成本評估函數（`CostEvaluator`）
+
+2. **新增資料屬性**：在 `Client` 或 `VehicleType` 加入新欄位（C++ 層）
+
+3. **更新成本 delta 計算**：讓局部搜尋的每個操作符能正確計算「套用此移動後成本的變化量」
+
+4. **加入 caching**（視需要）：時間相關的成本計算需要 caching（PyVRP 已有 `TimeWindowSegment` 作為範例）
+
+5. **Python 層**：更新 `Model.add_client()` 等介面接受新參數
+
+官方延伸指南：https://pyvrp.org/dev/new_vrp_variants.html
+
+### 11.2 可在 Python 層客製化的部分
+
+不需碰 C++，可直接在 Python 替換：
+
+| 可替換的部分 | 替換方式 |
+|------------|---------|
+| 交叉算子 | 傳入自訂函數給 `GeneticAlgorithm` 的 `crossover_op` 參數 |
+| 多樣性指標 | 傳入自訂函數給 `Population` 的 `diversity_op` 參數 |
+| 鄰域結構 | 傳入自訂鄰域列表給 `LocalSearch` |
+| 初始解生成方式 | 傳入自訂 `initial_solutions` 給 `GeneticAlgorithm` |
+| 操作符選擇 | 只加入你需要的 `node_operator` 和 `route_operator` |
+| 停止條件 | 實作 `StoppingCriterion` 介面 |
+| 統計收集 | 繼承或替換 `Statistics` 類 |
+
+---
+
+## 12. 參考文獻
+
+| 引用 | 完整資訊 | 在 PyVRP 中的角色 |
+|------|---------|-----------------|
+| **Vidal et al. 2013** | Vidal, T., Crainic, T.G., Gendreau, M., Prins, C. *A hybrid genetic algorithm with adaptive diversity management for a large class of vehicle routing problems with time-windows.* Computers & Operations Research, 40(1), 475–489. | **HGS 原始論文**，PyVRP 的演算法基礎；proximity 公式來源 |
+| **Vidal 2022** | Vidal, T. *Hybrid genetic search for the CVRP: Open-source implementation and SWAP* improvement.* Computers & Operations Research, 140, 105643. | HGS-CVRP 開源實作；biased fitness、SWAP* 算子來源 |
+| **Nagata & Kobayashi 2010** | Nagata, Y., Kobayashi, S. *A Memetic Algorithm for the Pickup and Delivery Problem with Time Windows Using Selective Route Exchange Crossover.* PPSN XI, 536–545. | **SREX 交叉算子**原始論文 |
+| **Toth & Vigo 2003** | Toth, P., Vigo, D. *The granular tabu search and its application to the vehicle-routing problem.* INFORMS J. Comput., 15(4), 333–346. | **稀疏鄰域（Granular Neighbourhood）**概念來源 |
+| **Toth & Vigo 2014** | Toth, P., Vigo, D. (Eds.). *Vehicle Routing: Problems, Methods, and Applications.* SIAM. | CVRP/VRPTW 標準定義教科書 |
+| **Uchoa et al. 2017** | Uchoa, E., et al. *New benchmark instances for the capacitated vehicle routing problem.* European J. Oper. Res., 257(3), 845–858. | **X benchmark**（100 個 CVRP 測試實例） |
+| **Homberger & Gehring 1999** | Homberger, J., Gehring, H. *Two evolutionary metaheuristics for the vehicle routing problem with time windows.* INFORMS J. Comput., 37(3), 297–318. | **H&G benchmark**（VRPTW 測試實例集，最大 1000 客戶） |
+| **Kool et al. 2022** | Kool, W., et al. *Deep Policy Dynamic Programming for Vehicle Routing Problems.* CPAIOR. | HGS-DIMACS（2021 DIMACS 競賽第一名）；VRPTW 參數設定來源 |
+| **Kwon et al. 2022** | Kwon, B., et al. *POMO: Policy Optimization with Multiple Optima for Reinforcement Learning.* NeurIPS. | 改進的 k-way tournament 選擇方法 |
+| **Lan 2023** | Lan, L. *VRPLIB: A Python package for reading VRP instances.* | 讀取 VRPLIB/Solomon 格式的工具套件 |
+| **Helsgaun 2017** | Helsgaun, K. *An extension of the Lin-Kernighan-Helsgaun TSP solver for constrained traveling salesman and vehicle routing problems.* | LKH-3；另一個常用 VRP 基準求解器（ML 研究常用） |
+| **Perron & Furnon 2022** | Google LLC. *OR-Tools.* | Google 最佳化工具組 |
+| **Pessoa et al. 2020** | Pessoa, A., et al. *A generic exact solver for vehicle routing and related problems.* Mathematical Programming, 183(1), 483–523. | VRPSolver；精確解求解器 |
+| **Coupey et al. 2023** | Coupey, T., et al. *VROOM.* GitHub. | VROOM；開源 VRP 求解器，整合地圖路由 |
+| **Van Doorn et al. 2022** | Van Doorn, J., et al. *EURO meets NeurIPS 2022 Vehicle Routing Competition.* | EURO meets NeurIPS 競賽；PyVRP 靜態組第一名 |
+
+---
+
+## 附錄：PyVRP 運作圖
 
 ```
-Step 1: 定義 TSP 問題資料（城市座標）
-Step 2: 隨機初始解（隨機排列）
-Step 3: 適應度函數（計算路徑總長）
-Step 4: 選擇（輪盤式 or 競賽選擇）
-Step 5: 交叉（OX 交叉）
-Step 6: 突變（隨機交換兩個城市）
-Step 7: 局部搜尋（2-OPT 改善）← 這是 HGS 的精髓
-Step 8: 種群替換
-Step 9: 重複至停止條件
+使用者輸入
+│  倉庫座標、客戶座標、需求量、時間窗
+│  車輛數量、容量
+│  停止條件
+↓
+Model.solve() / GeneticAlgorithm.run()
+│
+├── 初始化
+│   ├── ProblemData（C++）：組裝距離/時間矩陣
+│   ├── compute_neighbours：計算稀疏鄰域（O(kn)）
+│   ├── LocalSearch（C++ 操作符）
+│   ├── PenaltyManager（初始懲罰值）
+│   ├── Population（空族群）
+│   └── 生成 25 個隨機初始解 → 加入族群
+│
+└── 主迴圈
+    ├── tournament_select()×2 → 兩個親本
+    ├── srex(parents) → 後代解（C++）
+    ├── ls.search(offspring) → 節點操作改善（C++，~80%時間）
+    ├── ls.intensify(offspring) → 路線操作改善（C++）
+    ├── [80%機率] 修復：懲罰×12 → 再次 ls.search()
+    ├── pop.add(offspring) → 可能觸發淘汰
+    ├── pm.register_*() → 更新懲罰值（每50次）
+    └── [若無改善達20000次] → pop.clear() + 重新填充
+│
+└── 輸出 Result
+    ├── best：最佳解（路線列表）
+    ├── cost()：總距離
+    ├── num_iterations：迭代次數
+    ├── runtime：執行秒數
+    └── stats：每次迭代的詳細統計
 ```
-
-### 8.3 可以直接對比展示的點
-
-- 加入 2-OPT 局部搜尋 vs 不加：解質量差多少？
-- 種群多樣性如何影響是否陷入局部最優？
-- 交叉算子的選擇對收斂速度的影響
-- 這些正好對應 HGS 的設計哲學，是很好的延伸討論素材
-
----
-
-## 9. 參考文獻（論文引用）
-
-| 引用 | 說明 |
-|------|------|
-| Vidal et al. (2013) | HGS 原始論文，PyVRP 的演算法基礎 |
-| Vidal (2022) | HGS-CVRP 開源實作，biased fitness & SWAP* 來源 |
-| Nagata & Kobayashi (2010) | SREX 交叉算子原始論文 |
-| Toth & Vigo (2003) | Granular Tabu Search，稀疏鄰域概念來源 |
-| Toth & Vigo (2014) | VRP 教科書，CVRP/VRPTW 定義標準 |
-| Uchoa et al. (2017) | X benchmark 實例集（CVRP 測試用） |
-| Homberger & Gehring (1999) | H&G benchmark 實例集（VRPTW 測試用） |
-| Kool et al. (2022) | HGS-DIMACS，2021 DIMACS 競賽版本 |
-| Kwon et al. (2022) | 競賽選擇（k-way tournament）改進方法 |
-| Lan (2023) | VRPLIB，讀取標準格式實例的工具 |
-| Helsgaun (2017) | LKH-3，另一個常用 VRP 求解器 |
-| Perron & Furnon (2022) | OR-Tools，Google 最佳化工具 |
-| Pessoa et al. (2020) | VRPSolver，精確解求解器 |
-
----
-
----
-
-## 10. 一句話結論
-
-> **PyVRP 就是一個「你給我地圖和限制條件，我告訴你怎麼派車最省」的求解引擎。**
-
-你輸入：倉庫位置、客戶位置與需求量、車輛數量與載重上限（可選擇性加入時間窗）。
-它輸出：每台車各自要跑哪些客戶、走什麼順序、總行駛距離是多少。
-
-它不會憑空變出車，也不會強迫你用滿所有車——你告訴它「最多幾台」，它在這個範圍內找出最省的分配方式。背後跑的是 HGS 演算法（遺傳演算法 + 局部搜尋），在幾秒到幾分鐘內給出接近最優的解，可以處理幾千個客戶規模的問題。
 
 ---
 
 *文件整理時間：2026-04-06*
-*整合來源：PyVRP 論文 PDF 全文（55,947 字元）+ 原始碼掃描*
+*整合來源：PyVRP 論文 PDF 全文（55,947 字元）正文 7 節 + 附錄 A/B/C + 所有 Python 原始碼模組*
+*PyVRP 版本：v0.5.0*
