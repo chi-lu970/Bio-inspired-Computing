@@ -1,6 +1,8 @@
 .vscode
 .flake8
 tmp
+.claude/
+subprojects/.wraplock
 
 # Prerequisites
 *.d
