@@ -1,0 +1,78 @@
+{
+  "depot": {
+    "name": "台北車站（物流中心）",
+    "location": { "lat": 25.0478, "lng": 121.5170 },
+    "time_window": { "start": 480, "end": 1200 }
+  },
+  "stores": [
+    {
+      "id": "S001", "name": "7-11 中山北路店",
+      "location": { "lat": 25.0630, "lng": 121.5235 },
+      "time_window": { "start": 540, "end": 1020 },
+      "demand": 15, "service_minutes": 10
+    },
+    {
+      "id": "S002", "name": "全家 大安店",
+      "location": { "lat": 25.0330, "lng": 121.5430 },
+      "time_window": { "start": 600, "end": 1080 },
+      "demand": 20, "service_minutes": 12
+    },
+    {
+      "id": "S003", "name": "萊爾富 信義路店",
+      "location": { "lat": 25.0320, "lng": 121.5645 },
+      "time_window": { "start": 540, "end": 1020 },
+      "demand": 10, "service_minutes": 8
+    },
+    {
+      "id": "S004", "name": "7-11 松山機場門市",
+      "location": { "lat": 25.0700, "lng": 121.5500 },
+      "time_window": { "start": 480, "end": 1140 },
+      "demand": 25, "service_minutes": 15
+    },
+    {
+      "id": "S005", "name": "全家 內湖店",
+      "location": { "lat": 25.0830, "lng": 121.5780 },
+      "time_window": { "start": 600, "end": 1080 },
+      "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "S006", "name": "7-11 木柵店",
+      "location": { "lat": 24.9980, "lng": 121.5700 },
+      "time_window": { "start": 540, "end": 1020 },
+      "demand": 12, "service_minutes": 8
+    },
+    {
+      "id": "S007", "name": "全家 士林夜市店",
+      "location": { "lat": 25.0880, "lng": 121.5240 },
+      "time_window": { "start": 600, "end": 1200 },
+      "demand": 30, "service_minutes": 15
+    },
+    {
+      "id": "S008", "name": "萊爾富 新莊店",
+      "location": { "lat": 25.0360, "lng": 121.4420 },
+      "time_window": { "start": 540, "end": 1020 },
+      "demand": 22, "service_minutes": 12
+    },
+    {
+      "id": "S009", "name": "7-11 板橋文化店",
+      "location": { "lat": 25.0130, "lng": 121.4630 },
+      "time_window": { "start": 600, "end": 1080 },
+      "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "S010", "name": "全家 永和店",
+      "location": { "lat": 25.0110, "lng": 121.5160 },
+      "time_window": { "start": 540, "end": 1020 },
+      "demand": 14, "service_minutes": 8
+    }
+  ],
+  "vehicle_types": [
+    { "name": "小型配送車", "capacity": 80,  "num_available": 2 },
+    { "name": "大型配送車", "capacity": 120, "num_available": 1 }
+  ],
+  "config": {
+    "max_runtime_seconds": 10,
+    "avg_speed_kmh": 30,
+    "seed": 42
+  }
+}

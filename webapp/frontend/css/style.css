@@ -1,0 +1,444 @@
+/* ============================================================
+   PyVRP Web — 全域樣式
+   設計規範：
+     主色   #2E86AB（PyVRP 藍）
+     強調色 #F18F01（Action 橘）
+     字型   Inter + Noto Sans TC
+     圓角   8px
+     間距   --sp-s(8) / --sp-m(16) / --sp-l(24)
+   ============================================================ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+/* ── CSS 變數 ── */
+:root {
+  --primary:    #2E86AB;
+  --primary-dk: #1a5f7a;
+  --accent:     #F18F01;
+  --accent-dk:  #c97700;
+  --danger:     #E63946;
+  --success:    #06A77D;
+  --warn:       #FCBF49;
+  --gray-50:    #f8f9fa;
+  --gray-100:   #f1f3f5;
+  --gray-200:   #e9ecef;
+  --gray-400:   #adb5bd;
+  --gray-600:   #6c757d;
+  --gray-800:   #343a40;
+  --white:      #ffffff;
+
+  --sp-xs: 4px;
+  --sp-s:  8px;
+  --sp-m:  16px;
+  --sp-l:  24px;
+  --sp-xl: 40px;
+
+  --radius:   8px;
+  --radius-s: 4px;
+  --shadow-s: 0 1px 3px rgba(0,0,0,.10);
+  --shadow-m: 0 4px 12px rgba(0,0,0,.12);
+
+  --header-h: 52px;
+  --footer-h: 36px;
+  --panel-l:  320px;
+  --panel-r:  360px;
+  --font: 'Inter', 'Noto Sans TC', sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; font-family: var(--font); font-size: 14px; color: var(--gray-800); background: var(--gray-100); }
+button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+input, select { font-family: var(--font); font-size: 13px; }
+ul { list-style: none; }
+a { color: var(--primary); text-decoration: none; }
+
+/* ══════════════════════════════════════════════
+   版面：Header / Main Grid / Footer
+   ══════════════════════════════════════════════ */
+
+#app {
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr var(--footer-h);
+  height: 100dvh;
+}
+
+/* ── Header ── */
+header {
+  background: var(--primary);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-m);
+  gap: var(--sp-m);
+  box-shadow: var(--shadow-m);
+  z-index: 200;
+}
+header .logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+header .logo span { color: var(--warn); }
+header .spacer { flex: 1; }
+header .header-btn {
+  background: rgba(255,255,255,.15);
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: var(--radius-s);
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .15s;
+}
+header .header-btn:hover { background: rgba(255,255,255,.28); }
+header .header-btn.accent {
+  background: var(--accent);
+  border-color: var(--accent-dk);
+}
+header .header-btn.accent:hover { background: var(--accent-dk); }
+
+/* ── Main Grid（左面板 | 地圖 | 右面板） ── */
+main {
+  display: grid;
+  grid-template-columns: var(--panel-l) 1fr var(--panel-r);
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Footer ── */
+footer {
+  background: var(--gray-800);
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-m);
+  gap: var(--sp-l);
+  font-size: 12px;
+  z-index: 200;
+}
+footer .stat { display: flex; align-items: center; gap: var(--sp-xs); }
+footer .stat-label { color: var(--gray-400); }
+footer .stat-val { color: var(--white); font-weight: 500; }
+footer .stat-val.ok   { color: var(--success); }
+footer .stat-val.fail { color: var(--danger); }
+footer .stat-val.idle { color: var(--gray-400); }
+
+/* ══════════════════════════════════════════════
+   左側輸入面板
+   ══════════════════════════════════════════════ */
+
+#panel-left {
+  background: var(--white);
+  border-right: 1px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+.panel-scroll::-webkit-scrollbar { width: 5px; }
+.panel-scroll::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+
+/* ── 區塊卡片 ── */
+.section-card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.section-card .card-header {
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--sp-s) var(--sp-m);
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+.section-card .card-header .icon { font-size: 15px; }
+.section-card .card-body { padding: var(--sp-m); display: flex; flex-direction: column; gap: var(--sp-s); }
+
+/* ── 表單欄位 ── */
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 12px; color: var(--gray-600); font-weight: 500; }
+.field input, .field select {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-s);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--gray-800);
+  background: var(--white);
+  transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+}
+.field input:focus, .field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(46,134,171,.15);
+}
+.field input.error { border-color: var(--danger); }
+.field input.error:focus { box-shadow: 0 0 0 3px rgba(230,57,70,.15); }
+.field .err-msg { font-size: 11px; color: var(--danger); display: none; }
+.field input.error ~ .err-msg { display: block; }
+
+/* 並排兩欄 */
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-s); }
+
+/* ── 店面 / 車型項目 ── */
+.item-card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  margin-bottom: var(--sp-s);
+}
+.item-card:last-child { margin-bottom: 0; }
+.item-card .item-header {
+  background: var(--gray-100);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  cursor: pointer;
+  user-select: none;
+}
+.item-card .item-header .item-name { flex: 1; }
+.item-card .item-header .badge {
+  font-size: 11px;
+  background: var(--gray-200);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.item-card .item-header .del-btn {
+  color: var(--gray-400);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.item-card .item-header .del-btn:hover { color: var(--danger); }
+.item-card .item-body { padding: var(--sp-s) var(--sp-m) var(--sp-m); display: flex; flex-direction: column; gap: var(--sp-s); }
+
+/* ── 新增按鈕 ── */
+.add-btn {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--gray-400);
+  border-radius: var(--radius-s);
+  color: var(--gray-600);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--white);
+  transition: all .15s;
+}
+.add-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(46,134,171,.04); }
+
+/* ── 送出按鈕區 ── */
+.panel-actions {
+  padding: var(--sp-m);
+  border-top: 1px solid var(--gray-200);
+  background: var(--white);
+}
+#btn-solve {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: var(--white);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  transition: background .15s, opacity .15s;
+}
+#btn-solve:hover:not(:disabled) { background: var(--accent-dk); }
+#btn-solve:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════
+   中央地圖區
+   ══════════════════════════════════════════════ */
+
+#map-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+#map {
+  flex: 1;
+  min-height: 0;
+  z-index: 0;
+}
+
+/* Loading overlay */
+#map-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.75);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+  gap: var(--sp-m);
+  font-size: 15px;
+  color: var(--primary);
+  font-weight: 500;
+}
+#map-loading.active { display: flex; }
+
+/* Spinner */
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+#toast {
+  position: absolute;
+  top: var(--sp-m);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--danger);
+  color: var(--white);
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-m);
+  z-index: 500;
+  display: none;
+  max-width: 360px;
+  text-align: center;
+}
+#toast.show { display: block; animation: fadeIn .2s ease; }
+#toast.warn { background: var(--warn); color: var(--gray-800); }
+@keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
+
+/* ══════════════════════════════════════════════
+   右側結果面板
+   ══════════════════════════════════════════════ */
+
+#panel-right {
+  background: var(--white);
+  border-left: 1px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#panel-right .panel-title {
+  padding: var(--sp-s) var(--sp-m);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  font-weight: 600;
+  font-size: 13px;
+}
+#results-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+#results-scroll::-webkit-scrollbar { width: 5px; }
+#results-scroll::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+
+/* 空狀態 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  gap: var(--sp-s);
+  text-align: center;
+  padding: var(--sp-xl);
+}
+.empty-state .empty-icon { font-size: 40px; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* ── 車輛 Card ── */
+.route-card {
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.route-card.active { box-shadow: var(--shadow-m); }
+.route-card .route-card-header {
+  padding: var(--sp-s) var(--sp-m);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  font-weight: 600;
+  font-size: 13px;
+}
+.route-card .color-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-card .route-stats {
+  padding: 0 var(--sp-m) var(--sp-s);
+  display: flex;
+  gap: var(--sp-m);
+  font-size: 12px;
+  color: var(--gray-600);
+}
+.route-card .route-stats span b { color: var(--gray-800); }
+
+/* 停靠點列表 */
+.stop-list { padding: 0 var(--sp-m) var(--sp-m); }
+.stop-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-s);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 12px;
+}
+.stop-item:last-child { border-bottom: none; }
+.stop-item .stop-num {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--white);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.stop-item.depot .stop-num { background: var(--gray-600); font-size: 14px; }
+.stop-item .stop-info { flex: 1; }
+.stop-item .stop-name { font-weight: 600; color: var(--gray-800); }
+.stop-item .stop-time { color: var(--gray-600); }
+.stop-item .stop-wait { color: var(--warn); font-size: 11px; }
+.stop-item .stop-dist { color: var(--gray-400); font-size: 11px; }
+
+/* 不可行警告 */
+.infeasible-banner {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: var(--radius-s);
+  padding: var(--sp-s) var(--sp-m);
+  font-size: 12px;
+  color: #856404;
+}
