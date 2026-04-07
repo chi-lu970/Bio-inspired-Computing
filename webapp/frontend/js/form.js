@@ -430,7 +430,7 @@ function renderResults(result) {
     card.addEventListener('click', () => {
       document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
-      window.PyVRP.map.highlightRoute(route.vehicle_index);
+      window.PyVRP.map.highlightRoute(route.vehicle_index, true);
     });
 
     scroll.appendChild(card);

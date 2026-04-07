@@ -22,7 +22,7 @@ window.PyVRP.api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(35_000),   // 35 秒前端硬 timeout
+      signal: AbortSignal.timeout(90_000),   // 90 秒前端硬 timeout
     });
 
     const data = await resp.json().catch(() => ({}));

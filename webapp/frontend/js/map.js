@@ -223,7 +223,7 @@ window.PyVRP.map = (() => {
   }
 
   /* ── 高亮 / 取消高亮 ── */
-  function highlightRoute(vehicleIdx) {
+  function highlightRoute(vehicleIdx, fitView = false) {
     _activeIdx = vehicleIdx;
     _polylines.forEach(({ vehicleIdx: vi, polyline }) => {
       if (vi === vehicleIdx) {
@@ -234,9 +234,11 @@ window.PyVRP.map = (() => {
       }
     });
 
-    // fitBounds 到該路線
-    const target = _polylines.find(p => p.vehicleIdx === vehicleIdx);
-    if (target) map.fitBounds(target.polyline.getBounds(), { padding: [40, 40] });
+    // 只有明確要求時才 fitBounds（右側 card 點擊）
+    if (fitView) {
+      const target = _polylines.find(p => p.vehicleIdx === vehicleIdx);
+      if (target) map.fitBounds(target.polyline.getBounds(), { padding: [40, 40] });
+    }
   }
 
   function resetHighlight() {

@@ -71,7 +71,7 @@ async def solve(req: SolveRequest) -> SolveResponse:
     並設有 `max_runtime_seconds + 5` 秒的外部 timeout 保護。
     """
     loop = asyncio.get_event_loop()
-    outer_timeout = req.config.max_runtime_seconds + 5.0
+    outer_timeout = req.config.max_runtime_seconds + 15.0
 
     logger.info(
         "solve start stores=%d vehicle_types=%d max_runtime=%.1fs",
