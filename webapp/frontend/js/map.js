@@ -13,8 +13,8 @@ window.PyVRP.map = (() => {
 
   /* ── 顏色 palette（與 serializer.py 相同順序） ── */
   const PALETTE = [
-    '#E63946', '#F77F00', '#FCBF49', '#06A77D', '#118AB2',
-    '#073B4C', '#7209B7', '#F72585', '#4361EE', '#52B788',
+    '#FF0033', '#FF6600', '#FFCC00', '#00FF88', '#00CCFF',
+    '#CC00FF', '#FF0099', '#00FFEE', '#AAFF00', '#FF4400',
   ];
   const color = idx => PALETTE[idx % PALETTE.length];
 
@@ -25,8 +25,8 @@ window.PyVRP.map = (() => {
     zoomControl: true,
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
     maxZoom: 19,
   }).addTo(map);
 
@@ -51,7 +51,7 @@ window.PyVRP.map = (() => {
         background:#E63946; border-radius:50% 50% 50% 0;
         transform:rotate(-45deg);
         display:flex; align-items:center; justify-content:center;
-        box-shadow:0 2px 6px rgba(0,0,0,.3);
+        box-shadow:0 2px 8px rgba(0,0,0,.25);
         border:2px solid white;
       "><span style="transform:rotate(45deg); font-size:16px;">🏠</span></div>`,
       iconSize:   [36, 36],
@@ -64,17 +64,18 @@ window.PyVRP.map = (() => {
     return L.divIcon({
       className: '',
       html: `<div style="
-        width:28px; height:28px;
+        width:30px; height:30px;
         background:${clr}; border-radius:50%;
         display:flex; align-items:center; justify-content:center;
-        color:white; font-size:11px; font-weight:700;
-        box-shadow:0 2px 6px rgba(0,0,0,.3);
-        border:2px solid white;
+        color:white; font-size:12px; font-weight:800;
+        box-shadow:0 0 0 3px white, 0 0 10px 2px ${clr}99, 0 2px 6px rgba(0,0,0,.2);
+        border:none;
         font-family:Inter,sans-serif;
+        text-shadow:0 1px 2px rgba(0,0,0,.3);
       ">${num}</div>`,
-      iconSize:   [28, 28],
-      iconAnchor: [14, 14],
-      popupAnchor:[0, -16],
+      iconSize:   [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor:[0, -18],
     });
   }
 
@@ -150,16 +151,34 @@ window.PyVRP.map = (() => {
     const clr    = route.color;
     const coords = route.stops.map(s => [s.location.lat, s.location.lng]);
 
+    // 底層：加粗半透明 = 霓虹發光效果
+    const glow = L.polyline(coords, {
+      color:   clr,
+      weight:  5,
+      opacity: 0.15,
+      interactive: false,
+    });
+    routeLayer.addLayer(glow);
+
+    // 上層：實線
     const poly = L.polyline(coords, {
       color:   clr,
-      weight:  4,
-      opacity: 0.85,
+      weight:  2,
+      opacity: 0.75,
     });
 
     // hover 高亮效果
-    poly.on('mouseover', () => highlightRoute(route.vehicle_index));
+    poly.on('mouseover', () => {
+      poly.setStyle({ weight: 4 });
+      glow.setStyle({ weight: 10, opacity: 0.28 });
+      highlightRoute(route.vehicle_index);
+    });
     poly.on('mouseout',  () => {
-      if (_activeIdx !== route.vehicle_index) resetHighlight();
+      if (_activeIdx !== route.vehicle_index) {
+        poly.setStyle({ weight: 2, opacity: 0.75 });
+        glow.setStyle({ weight: 5, opacity: 0.15 });
+        resetHighlight();
+      }
     });
 
     // 點擊聯動右側面板
@@ -176,7 +195,7 @@ window.PyVRP.map = (() => {
     });
 
     routeLayer.addLayer(poly);
-    _polylines.push({ vehicleIdx: route.vehicle_index, polyline: poly });
+    _polylines.push({ vehicleIdx: route.vehicle_index, polyline: poly, glow });
 
     // 在每段線段的中點加箭頭
     for (let i = 0; i < coords.length - 1; i++) {
@@ -208,10 +227,10 @@ window.PyVRP.map = (() => {
     _activeIdx = vehicleIdx;
     _polylines.forEach(({ vehicleIdx: vi, polyline }) => {
       if (vi === vehicleIdx) {
-        polyline.setStyle({ weight: 7, opacity: 1 });
+        polyline.setStyle({ weight: 4, opacity: 1 });
         polyline.bringToFront();
       } else {
-        polyline.setStyle({ weight: 4, opacity: 0.25 });
+        polyline.setStyle({ weight: 2, opacity: 0.2 });
       }
     });
 
@@ -223,7 +242,7 @@ window.PyVRP.map = (() => {
   function resetHighlight() {
     _activeIdx = null;
     _polylines.forEach(({ polyline }) => {
-      polyline.setStyle({ weight: 4, opacity: 0.85 });
+      polyline.setStyle({ weight: 5, opacity: 1 });
     });
   }
 

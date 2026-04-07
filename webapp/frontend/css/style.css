@@ -13,10 +13,10 @@
 
 /* ── CSS 變數 ── */
 :root {
-  --primary:    #2E86AB;
-  --primary-dk: #1a5f7a;
-  --accent:     #F18F01;
-  --accent-dk:  #c97700;
+  --primary:    #0077CC;
+  --primary-dk: #005fa3;
+  --accent:     #FF6D00;
+  --accent-dk:  #e55c00;
   --danger:     #E63946;
   --success:    #06A77D;
   --warn:       #FCBF49;
@@ -378,6 +378,7 @@ footer .stat-val.idle { color: var(--gray-400); }
   border-radius: var(--radius);
   overflow: hidden;
   cursor: pointer;
+  background: var(--white);
   transition: border-color .15s, box-shadow .15s;
 }
 .route-card.active { box-shadow: var(--shadow-m); }
