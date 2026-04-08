@@ -61,6 +61,7 @@ a { color: var(--primary); text-decoration: none; }
 #app {
   display: grid;
   grid-template-rows: var(--header-h) 1fr var(--footer-h);
+  height: 100vh;
   height: 100dvh;
 }
 
@@ -80,7 +81,14 @@ header .logo {
   font-weight: 700;
   letter-spacing: .5px;
   white-space: nowrap;
+  color: var(--white);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font);
 }
+header .logo:hover { opacity: .85; }
 header .logo span { color: var(--warn); }
 header .spacer { flex: 1; }
 header .header-btn {
@@ -106,6 +114,7 @@ main {
   grid-template-columns: var(--panel-l) 1fr var(--panel-r);
   overflow: hidden;
   min-height: 0;
+  height: calc(100vh - var(--header-h) - var(--footer-h));
 }
 
 /* ── Footer ── */
@@ -133,21 +142,27 @@ footer .stat-val.idle { color: var(--gray-400); }
 #panel-left {
   background: var(--white);
   border-right: 1px solid var(--gray-200);
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  height: calc(100vh - var(--header-h) - var(--footer-h));
   overflow: hidden;
 }
 
 .panel-scroll {
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 72px;
   overflow-y: auto;
   padding: var(--sp-m);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-m);
 }
-.panel-scroll::-webkit-scrollbar { width: 5px; }
-.panel-scroll::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+.panel-scroll > * + * {
+  margin-top: var(--sp-m);
+}
+.panel-scroll::-webkit-scrollbar { width: 6px; }
+.panel-scroll::-webkit-scrollbar-track { background: var(--gray-100); }
+.panel-scroll::-webkit-scrollbar-thumb { background: var(--gray-400); border-radius: 4px; }
+.panel-scroll::-webkit-scrollbar-thumb:hover { background: var(--gray-600); }
 
 /* ── 區塊卡片 ── */
 .section-card {
@@ -164,7 +179,23 @@ footer .stat-val.idle { color: var(--gray-400); }
   display: flex;
   align-items: center;
   gap: var(--sp-s);
+  cursor: pointer;
+  user-select: none;
 }
+
+/* 縮合按鈕 */
+.section-card .collapse-btn {
+  margin-left: auto;
+  color: var(--gray-600);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.section-card.collapsed .collapse-btn { transform: rotate(-90deg); }
+.section-card.collapsed .card-body { display: none; }
+.section-card.collapsed .card-header { border-bottom: none; }
 .section-card .card-header .icon { font-size: 15px; }
 .section-card .card-body { padding: var(--sp-m); display: flex; flex-direction: column; gap: var(--sp-s); }
 
@@ -246,6 +277,10 @@ footer .stat-val.idle { color: var(--gray-400); }
 
 /* ── 送出按鈕區 ── */
 .panel-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: var(--sp-m);
   border-top: 1px solid var(--gray-200);
   background: var(--white);
@@ -335,31 +370,43 @@ footer .stat-val.idle { color: var(--gray-400); }
 #panel-right {
   background: var(--white);
   border-left: 1px solid var(--gray-200);
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  height: calc(100vh - var(--header-h) - var(--footer-h));
   overflow: hidden;
 }
 #panel-right .panel-title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
   padding: var(--sp-s) var(--sp-m);
   background: var(--gray-50);
   border-bottom: 1px solid var(--gray-200);
   font-weight: 600;
   font-size: 13px;
+  display: flex;
+  align-items: center;
 }
 #results-scroll {
-  flex: 1;
+  position: absolute;
+  top: 36px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow-y: auto;
   padding: var(--sp-m);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-m);
 }
-#results-scroll::-webkit-scrollbar { width: 5px; }
-#results-scroll::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+#results-scroll > * + * {
+  margin-top: var(--sp-m);
+}
+#results-scroll::-webkit-scrollbar { width: 6px; }
+#results-scroll::-webkit-scrollbar-track { background: var(--gray-100); }
+#results-scroll::-webkit-scrollbar-thumb { background: var(--gray-400); border-radius: 4px; }
+#results-scroll::-webkit-scrollbar-thumb:hover { background: var(--gray-600); }
 
 /* 空狀態 */
 .empty-state {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -368,6 +415,7 @@ footer .stat-val.idle { color: var(--gray-400); }
   gap: var(--sp-s);
   text-align: center;
   padding: var(--sp-xl);
+  height: 100%;
 }
 .empty-state .empty-icon { font-size: 40px; }
 .empty-state p { font-size: 13px; line-height: 1.6; }

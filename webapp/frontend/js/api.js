@@ -18,12 +18,19 @@ window.PyVRP.api = {
    * @throws {object} { status, code, message }
    */
   async solve(payload) {
-    const resp = await fetch(`${BASE}/api/solve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(90_000),   // 90 秒前端硬 timeout
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000);
+    let resp;
+    try {
+      resp = await fetch(`${BASE}/api/solve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     const data = await resp.json().catch(() => ({}));
 

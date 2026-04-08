@@ -437,6 +437,50 @@ function renderResults(result) {
   });
 }
 
+/* ── 重置（回首頁） ── */
+
+function resetAll() {
+  // 倉庫預設
+  document.getElementById('depot-name').value     = '倉庫';
+  document.getElementById('depot-lat').value      = '';
+  document.getElementById('depot-lng').value      = '';
+  document.getElementById('depot-tw-start').value = '08:00';
+  document.getElementById('depot-tw-end').value   = '20:00';
+  document.querySelectorAll('#depot-body input.error').forEach(el => clearError(el));
+
+  // 清除店面、車型
+  document.getElementById('store-list').innerHTML = '';
+  document.getElementById('vt-list').innerHTML    = '';
+  _storeSeq = 0; _vtSeq = 0;
+  updateStoreCount();
+  updateVtCount();
+
+  // 求解設定預設
+  document.getElementById('cfg-runtime').value = 10;
+  document.getElementById('cfg-speed').value   = 40;
+  document.getElementById('cfg-seed').value    = 42;
+
+  // 右側結果面板
+  const scroll = document.getElementById('results-scroll');
+  scroll.innerHTML = '<div class="empty-state" id="results-empty"><div class="empty-icon">🗺️</div><p>填寫左側表單並點擊<br>「開始計算」，<br>路線規劃結果將顯示於此。</p></div>';
+
+  // 狀態列
+  setFooter({
+    status:   { text: '待機', cls: 'idle' },
+    dist:     '—',
+    vehicles: '—',
+    time:     '—',
+  });
+
+  // 清除地圖
+  if (window.PyVRP.map?.clearAll) window.PyVRP.map.clearAll();
+
+  // 還原所有 collapsed 狀態
+  document.querySelectorAll('.section-card.collapsed').forEach(c => c.classList.remove('collapsed'));
+
+  refreshSolveBtn();
+}
+
 /* ── 初始化 ── */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -445,6 +489,24 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-add-store').addEventListener('click', () => addStore());
   document.getElementById('btn-add-vt').addEventListener('click', () => addVehicleType());
   document.getElementById('btn-solve').addEventListener('click', onSolve);
+
+  // Logo 回首頁
+  document.getElementById('btn-home').addEventListener('click', () => {
+    const hasData = document.querySelectorAll('.store-item').length > 0 ||
+                    document.getElementById('depot-lat').value !== '';
+    if (hasData) {
+      if (!confirm('確定要清除所有資料並回到首頁？')) return;
+    }
+    resetAll();
+  });
+
+  // 區塊縮合
+  document.querySelectorAll('.section-card .card-header').forEach(header => {
+    header.addEventListener('click', e => {
+      if (e.target.closest('.add-btn')) return; // 不攔截新增按鈕
+      header.closest('.section-card').classList.toggle('collapsed');
+    });
+  });
 
   // 載入範例
   document.getElementById('btn-load-example').addEventListener('click', async () => {
