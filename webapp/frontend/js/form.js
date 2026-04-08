@@ -508,22 +508,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 載入範例
-  document.getElementById('btn-load-example').addEventListener('click', async () => {
-    const hasData = document.querySelectorAll('.store-item').length > 0;
-    if (hasData) {
-      if (!confirm('載入範例將覆蓋現有資料，確定繼續？')) return;
-    }
+  // 載入範例 — 下拉選單
+  const btnLoadExample = document.getElementById('btn-load-example');
+  const exampleDropdown = document.getElementById('example-dropdown');
+
+  btnLoadExample.addEventListener('click', (e) => {
+    e.stopPropagation();
+    exampleDropdown.classList.toggle('open');
+  });
+
+  document.addEventListener('click', () => {
+    exampleDropdown.classList.remove('open');
+  });
+
+  async function loadExampleFile(filename) {
     try {
-      const data = await window.PyVRP.api.loadExample();
+      const data = await window.PyVRP.api.loadExample(filename);
+      window.PyVRP.map?.clearAll();
       fillForm(data);
-      // 通知地圖預覽位置
-      if (window.PyVRP.map?.previewLocations) {
-        window.PyVRP.map.previewLocations(data);
-      }
+      window.PyVRP.map?.previewLocations(data);
+      // 清除右側路線詳細資訊
+      document.getElementById('results-scroll').innerHTML =
+        '<div class="empty-state" id="results-empty"><div class="empty-icon">🗺️</div><p>填寫左側表單並點擊<br>「開始計算」，<br>路線規劃結果將顯示於此。</p></div>';
+      setFooter({ status: { text: '待機', cls: 'idle' }, dist: '—', vehicles: '—', time: '—' });
     } catch {
       showToast('示範資料載入失敗');
     }
+  }
+
+  document.querySelectorAll('.example-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exampleDropdown.classList.remove('open');
+      loadExampleFile(opt.dataset.file);
+    });
   });
 
   // 預設載入一個空店面和一個車型讓使用者感受到介面

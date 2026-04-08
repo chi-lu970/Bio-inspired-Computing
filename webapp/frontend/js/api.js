@@ -50,8 +50,8 @@ window.PyVRP.api = {
    * 載入示範資料 JSON
    * @returns {Promise<object>} SolveRequest 格式的範例物件
    */
-  async loadExample() {
-    const resp = await fetch('/examples/taipei_demo.json');
+  async loadExample(filename = 'taipei_demo.json') {
+    const resp = await fetch(`/examples/${filename}`);
     if (!resp.ok) throw new Error('示範資料載入失敗');
     return resp.json();
   },

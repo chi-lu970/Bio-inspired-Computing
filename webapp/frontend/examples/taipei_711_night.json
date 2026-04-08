@@ -1,0 +1,335 @@
+{
+  "_comment": "7-11 台北市大夜班配送。DC 00:30 出車，分兩波時窗：市區 01:00–04:00、外圍 03:00–06:00。時間單位：分鐘（從午夜起算）。速度：42 km/h。",
+  "depot": {
+    "name": "統一超商 台北物流中心",
+    "location": {
+      "lat": 25.0478,
+      "lng": 121.517
+    },
+    "time_window": {
+      "start": 30,
+      "end": 420
+    }
+  },
+  "stores": [
+    {
+      "id": "S001",
+      "name": "7-ELEVEN 中正鑫北門店",
+      "district": "中正區",
+      "location": {
+        "lat": 25.0479,
+        "lng": 121.5108
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 45,
+      "service_minutes": 20
+    },
+    {
+      "id": "S002",
+      "name": "7-ELEVEN 中山站店",
+      "district": "中山區",
+      "location": {
+        "lat": 25.0633,
+        "lng": 121.5241
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 60,
+      "service_minutes": 25
+    },
+    {
+      "id": "S003",
+      "name": "7-ELEVEN 大同寧夏店",
+      "district": "大同區",
+      "location": {
+        "lat": 25.0573,
+        "lng": 121.5144
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 35,
+      "service_minutes": 18
+    },
+    {
+      "id": "S004",
+      "name": "7-ELEVEN 萬華西門店",
+      "district": "萬華區",
+      "location": {
+        "lat": 25.0441,
+        "lng": 121.5079
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 85,
+      "service_minutes": 30
+    },
+    {
+      "id": "S005",
+      "name": "7-ELEVEN 中正師大店",
+      "district": "中正區",
+      "location": {
+        "lat": 25.0268,
+        "lng": 121.5293
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 30,
+      "service_minutes": 15
+    },
+    {
+      "id": "S006",
+      "name": "7-ELEVEN 大安敦南店",
+      "district": "大安區",
+      "location": {
+        "lat": 25.0376,
+        "lng": 121.5502
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 50,
+      "service_minutes": 22
+    },
+    {
+      "id": "S007",
+      "name": "7-ELEVEN 大安台大店",
+      "district": "大安區",
+      "location": {
+        "lat": 25.0175,
+        "lng": 121.5344
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 40,
+      "service_minutes": 20
+    },
+    {
+      "id": "S008",
+      "name": "7-ELEVEN 信義尊爵店",
+      "district": "信義區",
+      "location": {
+        "lat": 25.0368,
+        "lng": 121.5649
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 75,
+      "service_minutes": 28
+    },
+    {
+      "id": "S009",
+      "name": "7-ELEVEN 中山林森店",
+      "district": "中山區",
+      "location": {
+        "lat": 25.0524,
+        "lng": 121.5276
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 65,
+      "service_minutes": 25
+    },
+    {
+      "id": "S010",
+      "name": "7-ELEVEN 松山站店",
+      "district": "松山區",
+      "location": {
+        "lat": 25.0497,
+        "lng": 121.5776
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 35,
+      "service_minutes": 20
+    },
+    {
+      "id": "S011",
+      "name": "7-ELEVEN 士林劍潭店",
+      "district": "士林區",
+      "location": {
+        "lat": 25.0933,
+        "lng": 121.525
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 55,
+      "service_minutes": 22
+    },
+    {
+      "id": "S012",
+      "name": "7-ELEVEN 士林天母店",
+      "district": "士林區",
+      "location": {
+        "lat": 25.1066,
+        "lng": 121.528
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 30,
+      "service_minutes": 15
+    },
+    {
+      "id": "S013",
+      "name": "7-ELEVEN 北投石牌店",
+      "district": "北投區",
+      "location": {
+        "lat": 25.115,
+        "lng": 121.514
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 35,
+      "service_minutes": 18
+    },
+    {
+      "id": "S014",
+      "name": "7-ELEVEN 內湖瑞光店",
+      "district": "內湖區",
+      "location": {
+        "lat": 25.076,
+        "lng": 121.579
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 45,
+      "service_minutes": 20
+    },
+    {
+      "id": "S015",
+      "name": "7-ELEVEN 內湖港墘店",
+      "district": "內湖區",
+      "location": {
+        "lat": 25.072,
+        "lng": 121.588
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 40,
+      "service_minutes": 18
+    },
+    {
+      "id": "S016",
+      "name": "7-ELEVEN 信義永春店",
+      "district": "信義區",
+      "location": {
+        "lat": 25.038,
+        "lng": 121.5784
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 25,
+      "service_minutes": 15
+    },
+    {
+      "id": "S017",
+      "name": "7-ELEVEN 松山民生東店",
+      "district": "松山區",
+      "location": {
+        "lat": 25.0598,
+        "lng": 121.565
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 40,
+      "service_minutes": 20
+    },
+    {
+      "id": "S018",
+      "name": "7-ELEVEN 南港經貿店",
+      "district": "南港區",
+      "location": {
+        "lat": 25.0547,
+        "lng": 121.6144
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 50,
+      "service_minutes": 20
+    },
+    {
+      "id": "S019",
+      "name": "7-ELEVEN 文山政大店",
+      "district": "文山區",
+      "location": {
+        "lat": 24.9885,
+        "lng": 121.5772
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 25,
+      "service_minutes": 15
+    },
+    {
+      "id": "S020",
+      "name": "7-ELEVEN 大安科技店",
+      "district": "大安區",
+      "location": {
+        "lat": 25.0271,
+        "lng": 121.5439
+      },
+      "time_window": {
+        "start": 60,
+        "end": 360
+      },
+      "demand": 30,
+      "service_minutes": 15
+    }
+  ],
+  "vehicle_types": [
+    {
+      "name": "小型冷藏廂型車",
+      "capacity": 120,
+      "num_available": 4
+    },
+    {
+      "name": "中型冷藏貨車",
+      "capacity": 200,
+      "num_available": 3
+    }
+  ],
+  "config": {
+    "max_runtime_seconds": 15,
+    "avg_speed_kmh": 42,
+    "seed": 42,
+    "scenario": "大夜班 (01:00–06:00)",
+    "_comment_tw": "單一時窗 01:00-06:00，確保 GA 快速收斂"
+  }
+}

@@ -18,7 +18,13 @@
   <!-- ════════════════ Header ════════════════ -->
   <header>
     <button class="logo" id="btn-home" title="回到首頁（清除所有資料）">Py<span>VRP</span> Web</button>
-    <button class="header-btn" id="btn-load-example">📂 載入範例</button>
+    <div class="example-picker">
+      <button class="header-btn" id="btn-load-example">📂 載入範例 ▾</button>
+      <div class="example-dropdown" id="example-dropdown">
+        <div class="example-option" data-file="taipei_demo.json">7-11 台北市日班配送 (16 家門市)</div>
+        <div class="example-option" data-file="taipei_711_night.json">7-11 台北市大夜班配送 (20 家門市)</div>
+      </div>
+    </div>
     <div class="spacer"></div>
     <a href="/docs" target="_blank" class="header-btn">API 文件</a>
   </header>
