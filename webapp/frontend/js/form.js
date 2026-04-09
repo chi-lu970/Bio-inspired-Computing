@@ -333,14 +333,62 @@ function showToast(msg, type = 'error') {
   el._timer = setTimeout(() => { el.className = ''; }, 5000);
 }
 
+/* ── 必填檢核 ── */
+
+/**
+ * 檢查所有必填欄位，回傳第一個未填的 input 元素，全部填寫則回傳 null。
+ */
+function findFirstEmptyField() {
+  // 倉庫座標
+  for (const id of ['depot-lat', 'depot-lng']) {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) return el;
+  }
+  // 每個店面的座標
+  for (const store of document.querySelectorAll('.store-item')) {
+    for (const cls of ['.s-lat', '.s-lng']) {
+      const el = store.querySelector(cls);
+      if (!el.value.trim()) return el;
+    }
+  }
+  // 每個車型的容量與台數
+  for (const vt of document.querySelectorAll('.vt-item')) {
+    for (const cls of ['.vt-cap', '.vt-num']) {
+      const el = vt.querySelector(cls);
+      if (!el.value.trim()) return el;
+    }
+  }
+  return null;
+}
+
+/** 展開所在的 section-card（若已折疊），scroll 並 focus */
+function focusEmptyField(el) {
+  const card = el.closest('.section-card');
+  if (card) card.classList.remove('collapsed');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.focus();
+  setError(el, '必填');
+}
+
 /* ── 求解主流程 ── */
 
 async function onSolve() {
+  // 必填檢核
+  const empty = findFirstEmptyField();
+  if (empty) {
+    focusEmptyField(empty);
+    showToast('請填寫所有必填欄位後再試');
+    return;
+  }
+
   const payload = collectFormData();
 
-  // 顯示 loading
+  // 顯示 loading，並切換為「取消」按鈕
   document.getElementById('map-loading').classList.add('active');
-  document.getElementById('btn-solve').disabled = true;
+  const btnSolve = document.getElementById('btn-solve');
+  const btnCancel = document.getElementById('btn-cancel');
+  btnSolve.style.display = 'none';
+  if (btnCancel) btnCancel.style.display = '';
   setFooter({ status: { text: '求解中…', cls: 'idle' } });
 
   try {
@@ -366,10 +414,20 @@ async function onSolve() {
     });
 
   } catch (err) {
-    showToast(err.message ?? '求解失敗，請檢查輸入資料');
-    setFooter({ status: { text: '求解失敗', cls: 'fail' } });
+    // 取消屬正常操作，不顯示錯誤
+    if (err.code === 'client_timeout' || err.code === 'solver_busy') {
+      showToast(err.message, 'warn');
+      setFooter({ status: { text: '求解取消', cls: 'idle' } });
+    } else if (err.name === 'AbortError') {
+      setFooter({ status: { text: '已取消', cls: 'idle' } });
+    } else {
+      showToast(err.message ?? '求解失敗，請檢查輸入資料');
+      setFooter({ status: { text: '求解失敗', cls: 'fail' } });
+    }
   } finally {
     document.getElementById('map-loading').classList.remove('active');
+    btnSolve.style.display = '';
+    if (btnCancel) btnCancel.style.display = 'none';
     refreshSolveBtn();
   }
 }
@@ -489,6 +547,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-add-store').addEventListener('click', () => addStore());
   document.getElementById('btn-add-vt').addEventListener('click', () => addVehicleType());
   document.getElementById('btn-solve').addEventListener('click', onSolve);
+
+  // 取消按鈕
+  const btnCancel = document.getElementById('btn-cancel');
+  if (btnCancel) {
+    btnCancel.style.display = 'none';
+    btnCancel.addEventListener('click', () => {
+      window.PyVRP.api.cancelSolve();
+    });
+  }
 
   // Logo 回首頁
   document.getElementById('btn-home').addEventListener('click', () => {

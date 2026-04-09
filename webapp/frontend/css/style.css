@@ -326,6 +326,20 @@ footer .stat-val.idle { color: var(--gray-400); }
 }
 #btn-solve:hover:not(:disabled) { background: var(--accent-dk); }
 #btn-solve:disabled { opacity: .5; cursor: not-allowed; }
+.btn-cancel {
+  width: 100%;
+  padding: 11px;
+  background: var(--gray-200);
+  color: var(--gray-800);
+  border: none;
+  border-radius: var(--radius);
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  margin-top: var(--sp-s);
+}
+.btn-cancel:hover { background: var(--gray-400); }
 
 /* ══════════════════════════════════════════════
    中央地圖區
@@ -458,6 +472,13 @@ footer .stat-val.idle { color: var(--gray-400); }
   transition: border-color .15s, box-shadow .15s;
 }
 .route-card.active { box-shadow: var(--shadow-m); }
+@keyframes card-flash {
+  0%   { background: transparent; }
+  25%  { background: var(--flash-color, rgba(255,109,0,0.28)); }
+  75%  { background: var(--flash-color, rgba(255,109,0,0.28)); }
+  100% { background: transparent; }
+}
+.route-card.flash { animation: card-flash 0.6s ease; }
 .route-card .route-card-header {
   padding: var(--sp-s) var(--sp-m);
   display: flex;

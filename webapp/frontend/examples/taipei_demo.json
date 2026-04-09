@@ -120,8 +120,8 @@
     }
   ],
   "vehicle_types": [
-    { "name": "小型廂型車", "capacity": 100, "num_available": 4 },
-    { "name": "中型貨車",   "capacity": 150, "num_available": 2 }
+    { "name": "大型貨車", "capacity": 140, "num_available": 2 },
+    { "name": "中型貨車", "capacity": 80,  "num_available": 4 }
   ],
   "config": {
     "max_runtime_seconds": 10,

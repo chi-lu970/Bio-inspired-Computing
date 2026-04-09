@@ -17,9 +17,22 @@ window.PyVRP.api = {
    * @returns {Promise<object>} SolveResponse
    * @throws {object} { status, code, message }
    */
+  // 目前進行中的 AbortController（供取消用）
+  _currentController: null,
+
   async solve(payload) {
+    // 取消上一個還在等待的請求（避免堆積）
+    if (this._currentController) {
+      this._currentController.abort();
+    }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 90000);
+    this._currentController = controller;
+
+    // 前端 timeout：max_runtime_seconds 的 3 倍作為最後保險
+    // 正常情況由後端 TimedNoImprovement 控制停止，不應觸發到這裡
+    const frontendTimeout = (payload.config?.max_runtime_seconds ?? 10) * 3 + 10;
+    const timer = setTimeout(() => controller.abort(), frontendTimeout * 1000);
+
     let resp;
     try {
       resp = await fetch(`${BASE}/api/solve`, {
@@ -28,8 +41,20 @@ window.PyVRP.api = {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw {
+          status: 0,
+          code: 'client_timeout',
+          message: `前端等待逾時（${frontendTimeout} 秒），請縮短最大運算時間或減少店面數量後重試。`,
+        };
+      }
+      throw err;
     } finally {
       clearTimeout(timer);
+      if (this._currentController === controller) {
+        this._currentController = null;
+      }
     }
 
     const data = await resp.json().catch(() => ({}));
@@ -44,6 +69,14 @@ window.PyVRP.api = {
       };
     }
     return data;
+  },
+
+  /** 取消目前正在等待的求解請求 */
+  cancelSolve() {
+    if (this._currentController) {
+      this._currentController.abort();
+      this._currentController = null;
+    }
   },
 
   /**

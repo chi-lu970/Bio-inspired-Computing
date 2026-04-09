@@ -22,7 +22,7 @@
       <button class="header-btn" id="btn-load-example">📂 載入範例 ▾</button>
       <div class="example-dropdown" id="example-dropdown">
         <div class="example-option" data-file="taipei_demo.json">7-11 台北市日班配送 (16 家門市)</div>
-        <div class="example-option" data-file="taipei_711_night.json">7-11 台北市大夜班配送 (20 家門市)</div>
+        <div class="example-option" data-file="taipei_711_night.json">7-11 台北市大夜班配送 (16 家門市)</div>
       </div>
     </div>
     <div class="spacer"></div>
@@ -106,7 +106,7 @@
           <div class="card-body">
             <div class="row-2">
               <div class="field">
-                <label>最長求解秒數</label>
+                <label>最長等待秒數（保底）</label>
                 <input type="number" id="cfg-runtime" value="10" min="1" max="300" />
               </div>
               <div class="field">
@@ -125,6 +125,7 @@
 
       <div class="panel-actions">
         <button id="btn-solve" disabled>開始計算</button>
+        <button id="btn-cancel" class="btn-cancel" style="display:none">取消計算</button>
       </div>
     </div><!-- /panel-left -->
 
@@ -174,8 +175,8 @@
 </div><!-- /app -->
 
 <!-- JS（模組化，順序：api → map → form） -->
-<script type="module" src="/js/api.js"></script>
-<script type="module" src="/js/map.js"></script>
-<script type="module" src="/js/form.js"></script>
+<script type="module" src="/js/api.js?v=8"></script>
+<script type="module" src="/js/map.js?v=8"></script>
+<script type="module" src="/js/form.js?v=8"></script>
 </body>
 </html>

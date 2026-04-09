@@ -126,16 +126,34 @@ window.PyVRP.map = (() => {
   }
 
   /* ── 店面 Marker ── */
-  function renderStoreMarker(stop, orderNum, clr) {
+  /* hex #RRGGBB → rgba 字串 */
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  /* 閃爍指定 card，用路線顏色 */
+  function flashCard(vehicleIdx, clr) {
+    const card = document.querySelector(`.route-card[data-vehicle-idx="${vehicleIdx}"]`);
+    if (!card) return;
+    document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active', 'flash'));
+    card.classList.add('active');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    card.style.setProperty('--flash-color', hexToRgba(clr, 0.28));
+    void card.offsetWidth;
+    card.classList.add('flash');
+  }
+
+  function renderStoreMarker(stop, orderNum, clr, vehicleIdx) {
     if (stop.store_id === 'depot') return;
     const { lat, lng } = stop.location;
-    const icon   = storeIcon(orderNum, clr);
-    const marker = L.marker([lat, lng], { icon });
+    const marker = L.marker([lat, lng], { icon: storeIcon(orderNum, clr) });
 
     const waitStr = stop.wait_minutes > 0
       ? `<br>⏳ 等待 ${stop.wait_minutes} 分`
       : '';
-
     marker.bindPopup(`
       <b>${stop.name}</b><br>
       抵達：${minToHHMM(stop.arrival_minutes)}<br>
@@ -143,6 +161,14 @@ window.PyVRP.map = (() => {
       ${waitStr}<br>
       距上站：${stop.distance_from_prev_km} km
     `);
+
+    // 點擊節點 = 點擊所屬路線
+    marker.on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+      highlightRoute(vehicleIdx);
+      flashCard(vehicleIdx, clr);
+    });
+
     storeLayer.addLayer(marker);
   }
 
@@ -151,51 +177,22 @@ window.PyVRP.map = (() => {
     const clr    = route.color;
     const coords = route.stops.map(s => [s.location.lat, s.location.lng]);
 
-    // 底層：加粗半透明 = 霓虹發光效果
-    const glow = L.polyline(coords, {
-      color:   clr,
-      weight:  5,
-      opacity: 0.15,
-      interactive: false,
-    });
-    routeLayer.addLayer(glow);
-
-    // 上層：實線
+    // 路線實線
     const poly = L.polyline(coords, {
       color:   clr,
-      weight:  2,
-      opacity: 0.75,
+      weight:  4,
+      opacity: 0.85,
     });
 
-    // hover 高亮效果
-    poly.on('mouseover', () => {
-      poly.setStyle({ weight: 4 });
-      glow.setStyle({ weight: 10, opacity: 0.28 });
+    // 點擊路線：聚焦此路線 + 右側面板錨定並閃爍
+    poly.on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
       highlightRoute(route.vehicle_index);
-    });
-    poly.on('mouseout',  () => {
-      if (_activeIdx !== route.vehicle_index) {
-        poly.setStyle({ weight: 2, opacity: 0.75 });
-        glow.setStyle({ weight: 5, opacity: 0.15 });
-        resetHighlight();
-      }
-    });
-
-    // 點擊聯動右側面板
-    poly.on('click', () => {
-      highlightRoute(route.vehicle_index);
-      const card = document.querySelector(
-        `.route-card[data-vehicle-idx="${route.vehicle_index}"]`
-      );
-      if (card) {
-        document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      flashCard(route.vehicle_index, clr);
     });
 
     routeLayer.addLayer(poly);
-    _polylines.push({ vehicleIdx: route.vehicle_index, polyline: poly, glow });
+    _polylines.push({ vehicleIdx: route.vehicle_index, polyline: poly });
 
     // 在每段線段的中點加箭頭
     for (let i = 0; i < coords.length - 1; i++) {
@@ -222,19 +219,17 @@ window.PyVRP.map = (() => {
     }
   }
 
-  /* ── 高亮 / 取消高亮 ── */
+  /* ── 高亮 / 重置 ── */
   function highlightRoute(vehicleIdx, fitView = false) {
     _activeIdx = vehicleIdx;
     _polylines.forEach(({ vehicleIdx: vi, polyline }) => {
-      if (vi === vehicleIdx) {
-        polyline.setStyle({ weight: 4, opacity: 1 });
-        polyline.bringToFront();
-      } else {
-        polyline.setStyle({ weight: 2, opacity: 0.2 });
-      }
+      polyline.setStyle(vi === vehicleIdx
+        ? { weight: 5, opacity: 1 }
+        : { weight: 4, opacity: 0.2 }
+      );
+      if (vi === vehicleIdx) polyline.bringToFront();
     });
 
-    // 只有明確要求時才 fitBounds（右側 card 點擊）
     if (fitView) {
       const target = _polylines.find(p => p.vehicleIdx === vehicleIdx);
       if (target) map.fitBounds(target.polyline.getBounds(), { padding: [40, 40] });
@@ -244,14 +239,14 @@ window.PyVRP.map = (() => {
   function resetHighlight() {
     _activeIdx = null;
     _polylines.forEach(({ polyline }) => {
-      polyline.setStyle({ weight: 5, opacity: 1 });
+      polyline.setStyle({ weight: 4, opacity: 0.85 });
     });
   }
 
-  // 點擊地圖空白處取消選取
+  // 點擊地圖空白處恢復所有路線
   map.on('click', () => {
     resetHighlight();
-    document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active', 'flash'));
   });
 
   /* ── fitBounds ── */
@@ -285,7 +280,7 @@ window.PyVRP.map = (() => {
       let order = 1;
       route.stops.forEach(stop => {
         if (stop.store_id === 'depot') return;
-        renderStoreMarker(stop, order++, route.color);
+        renderStoreMarker(stop, order++, route.color, route.vehicle_index);
         allLatLngs.push([stop.location.lat, stop.location.lng]);
       });
     });
