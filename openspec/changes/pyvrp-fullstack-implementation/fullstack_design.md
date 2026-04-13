@@ -31,8 +31,21 @@
 └──────────────────────────────────┬───────────────────────────┘
                                    │ pyvrp.Model.solve()
 ┌──────────────────────────────────▼───────────────────────────┐
-│                      求解引擎 (PyVRP)                          │
-│        Genetic Algorithm + Local Search + HGS                 │
+│                   求解引擎 (PyVRP — HGS 混合架構)               │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              Python 層（演算法流程控制）                 │  │
+│  │   GeneticAlgorithm.py  ←→  Population.py              │  │
+│  │   PenaltyManager.py    ←→  停止條件 (stop/)            │  │
+│  └───────────────────────┬───────────────────────────────┘  │
+│                           │ pybind11 呼叫                    │
+│  ┌───────────────────────▼───────────────────────────────┐  │
+│  │              C++ 層（效能關鍵核心）                      │  │
+│  │   LocalSearch.cpp  ← TwoOpt / SwapStar / Relocate*    │  │
+│  │   Solution.cpp / ProblemData.cpp / CostEvaluator.cpp  │  │
+│  │   crossover/selective_route_exchange.cpp (SREX)        │  │
+│  │   diversity/broken_pairs_distance.cpp (BPD)            │  │
+│  └───────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -73,6 +86,52 @@ Bio-inspired-Computing/
 ---
 
 ## 2. 關鍵技術決策
+
+### 1.3 求解引擎內部架構：HGS Python/C++ 混合層
+
+PyVRP 的核心演算法 **HGS（Hybrid Genetic Search）** 不是單一模組，而是 Python 控制流程 + C++ 效能核心的混合架構，透過 **pybind11** 橋接。
+
+#### Python 層（`pyvrp/*.py`）— 演算法邏輯
+
+| 檔案 | 職責 |
+|------|------|
+| `GeneticAlgorithm.py` | HGS 主迴圈：選親代 → 交叉 → 區域搜尋 → 更新族群 → 重啟 |
+| `Population.py` | 族群選擇邏輯（精英保留 + 多樣性篩選） |
+| `PenaltyManager.py` | 動態調整不可行解的懲罰係數 |
+| `stop/*.py` | 停止條件（`MaxRuntime`、`MaxIterations` 等） |
+
+#### C++ 層（`pyvrp/cpp/`）— 效能關鍵核心
+
+| 子目錄 / 檔案 | 職責 | 說明 |
+|--------------|------|------|
+| `search/LocalSearch.cpp` | 區域搜尋主體 | 佔整體求解時間 80–90% |
+| `search/TwoOpt.cpp` | 2-opt 路線重排 | 每次 GA 迭代呼叫數萬次 |
+| `search/SwapStar.cpp` | SWAP* 跨路線交換 | 路線層級操作符 |
+| `search/RelocateStar.cpp` | Relocate* | 節點跨路線搬移 |
+| `crossover/selective_route_exchange.cpp` | SREX 交叉算子 | 基因重組核心 |
+| `diversity/broken_pairs_distance.cpp` | BPD 多樣性度量 | 計算解與解的差異度 |
+| `Solution.cpp` / `ProblemData.cpp` | 解與問題資料結構 | 頻繁讀寫，需低記憶體開銷 |
+| `CostEvaluator.cpp` | 成本計算（距離 + 懲罰） | 每次評估都需快速回應 |
+| `bindings.cpp` | pybind11 橋接層 | 將所有 C++ class 暴露為 Python 可呼叫物件 |
+
+#### 為何這樣分層
+
+- **Python 負責「策略」**：迴圈控制、重啟邏輯、停止條件判斷，邏輯複雜但呼叫頻率低，Python 可讀性優先
+- **C++ 負責「戰術」**：LocalSearch 每次 GA 迭代都要跑一遍，對 10 個客戶問題就會呼叫數萬次操作符；C++ 比純 Python 快 10–100 倍
+- **pybind11 橋接**：Python 呼叫 `search_method(sol, cost_evaluator)` 時，實際執行的是編譯後的 `_search.so`，完全透明
+
+#### 對本專案的影響
+
+本專案**不修改 C++ 層**，所有擴充（API、座標轉換、序列化）均在 Python 層進行。呼叫路徑為：
+
+```
+webapp/backend/services/solver.py
+  → pyvrp.Model.solve()           # Python 高層介面
+      → GeneticAlgorithm.run()   # Python HGS 主迴圈
+          → LocalSearch(sol)     # pybind11 → C++ 執行
+```
+
+---
 
 ### 決策 1：採用 FastAPI 而非 Flask
 
