@@ -38,6 +38,25 @@ uv run --python 3.11 python run_server.py
 
 ---
 
+### Task 1.0 — 論文截圖（直接使用論文圖表）
+
+論文 PDF 中有一張可以直接引用的圖：
+
+| 截圖編號 | 說明 | 用於哪張投影片 |
+|---------|------|--------------|
+| `paper_figure1.png` | 論文 p.12 Figure 1（四格統計圖：diversity + objectives + runtimes + solution map）| Slide 13（族群管理說明） |
+
+**截圖方式**：
+- 開啟 `PyVRP論文.pdf` 第 12 頁
+- 截取 Figure 1 的完整四格圖
+- 解析度盡量高清（300 DPI 以上）
+
+> 論文 Figure 1 caption 核心句：
+> *"It is clear from this figure that periodic survivor selection improves diversity."*
+> 這張圖直接視覺化了族群管理機制的效果，是 Slide 13 的最佳佐證圖。
+
+---
+
 ### Task 1.2 — 圖表製作素材整理
 
 需要製作的圖表，以及對應的數據來源：
@@ -146,16 +165,25 @@ uv run --python 3.11 python run_server.py
 
 ## 重要數據速查（製作時可直接引用）
 
-### 演算法核心數據
+### 演算法核心數據（論文直接數據）
 | 指標 | 數值 | 來源 |
 |------|------|------|
-| CVRP Mean Gap | **0.22%** | 論文 Table 1 |
-| VRPTW Mean Gap | **0.40%** | 論文 Table 2 |
-| 改善 BKS 數量 | **27 個** | 論文 Section 6 |
-| 局部搜尋佔用時間 | **80–90%** | 論文 Section 3 |
-| Population 大小 | **25–65** | Table 3 (Appendix A) |
-| Target feasible | **43%** | Table 3 |
-| Restart 條件 | **20,000 次無改善** | GeneticAlgorithmParams |
+| CVRP Mean Gap | **0.22%** | 論文 Table 1（p.14）|
+| CVRP Gap of Mean | **0.27%** | 論文 Table 1 |
+| VRPTW Mean Gap | **0.40%** | 論文 Table 2（p.15）|
+| VRPTW Gap of Mean | **0.46%** | 論文 Table 2 |
+| CVRP 最佳競爭對手 (HGS-CVRP) | **0.11%** | 論文 Table 1 |
+| VRPTW 最佳競爭對手 (HGS-DIMACS) | **0.32%** | 論文 Table 2 |
+| 改善 BKS 數量 | **27 個** | 論文 Section 6.2（p.15）|
+| 局部搜尋佔用時間 | **80–90%** | 論文 Section 4.3（p.7）|
+| Population 大小 | **25–65** | 論文 Table 3（p.17）|
+| Target feasible | **43%** | 論文 Table 3 |
+| Restart 條件 | **20,000 次無改善** | 論文 Table 3 |
+| CVRP 鄰域大小 nb_granular | **20** | 論文 Table 3 |
+| VRPTW 鄰域大小 nb_granular | **40** | 論文 Table 3 |
+| DIMACS competition ranking | **DIMACS: #1 (2021); simplified version → #2** | 論文 Section 6.2 |
+| PyVRP 版本 | **0.5.0** | 論文 Section 6（p.13）|
+| arXiv ID | **2403.13795v2 [cs.NE]** | 論文封面 |
 
 ### 系統實作數據
 | 指標 | 數值 | 來源 |

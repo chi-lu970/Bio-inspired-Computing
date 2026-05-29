@@ -11,39 +11,52 @@
 Benchmark: X benchmark (Uchoa et al. 2017)
 Instances: 100 CVRP instances
 Scale: 100–1001 customers
-Runtime: n × 2.4 sec (PassMark normalized)
+Runtime: Tmax = n × 240/100 sec (PassMark normalized)
+         (100 customers → 4 min; 1001 customers → 40 min)
 Repeats: 10 random seeds, average reported
 Hardware: AMD EPYC 7H12 (PassMark 2014)
+Baseline CPU: Intel Gold 6148 (PassMark 2183) → normalized by ×(2183/2014)
 ```
 
 **橫條圖（主體，佔 60% 空間）**：
 
-顯示 Mean Gap（越低越好）：
+顯示 Mean Gap 和 Gap of Mean（越低越好）：
 ```
-BKS (Best Known Solution)    ████░░░░░  0.00%  ← 理論最佳
-──────────────────────────────────────────────
-HGS-CVRP (Vidal 2022)        ████░░░░░  0.11%
-PyVRP (ours, 2024)           ████░░░░░  0.22%  ← 我們使用的
-HGS-2012 (Wouda et al.)      ████░░░░░  0.21%
-OR-Tools (Google)            ████████░  ~3.5%  (估計值)
+                     Mean Gap    Gap of Mean
+BKS (Best Known)     0.00%       0.00%     ← 理論最佳
+─────────────────────────────────────────────
+HGS-CVRP (Vidal)     0.11%       0.16%     ← 專用 CVRP 解算器
+HGS-2012 (Vidal)     0.21%       0.28%
+PyVRP (ours, 2024)   0.22%       0.27%     ← 我們使用的
+```
+*(數據來源：論文 Table 1)*
+
+**小型實例亮點（Callout 框）**：
+```
+Many small instances solved to PROVEN OPTIMUM (Gap = 0%):
+  X-n101-k25, X-n110-k13, X-n115-k10, X-n120-k6, 
+  X-n129-k18, X-n157-k13, X-n162-k11, X-n167-k10...
+
+Largest instance (X-n1001-k43):
+  PyVRP: 73,001.0  |  BKS: 72,355  |  Gap: 0.89%
 ```
 
-**關鍵數據 Callout（橘色框）**：
+**論文原文引語（橘色框）**：
 ```
-PyVRP Mean Gap: 0.22%
-→ Less than 0.25% from world's best known solution
-→ Significantly better than Google OR-Tools
+"Despite the fact that PyVRP has not been specifically designed for the CVRP, 
+these gaps are only slightly higher than the gaps of specialised CVRP solvers."
+                                                        — Wouda et al., 2024
 ```
 
 **底部備註**：
 ```
-* PyVRP slightly underperforms HGS-CVRP (specialized C++ solver) 
-  due to its generalized design for multiple VRP variants
-* Trade-off: slight quality loss vs. dramatically higher flexibility
+* BKSs obtained from CVRPLIB on 28 February 2023
+* PyVRP v0.5.0 used for all experiments (archived on IJOC GitHub)
+* Trade-off: slight quality loss vs. dramatically higher flexibility + MIT license
 ```
 
 **Presenter Notes**：
-> "A 0.22% gap from the best known solution is remarkable. For a 1000-customer route costing 100,000 total distance units, PyVRP finds a solution within 220 units of optimal—that's effectively optimal for real-world logistics."
+> "A 0.22% gap from the best known solution is remarkable. Notice that PyVRP solves many small instances to proven optimality—0% gap. The paper also explicitly notes that PyVRP 'has not been specifically designed for the CVRP,' yet it still nearly matches specialized CVRP solvers. For the hardest 1000-customer instance, the gap is 0.89%—less than 1% from optimal for a problem with over a trillion possible routes."
 
 ---
 
@@ -69,24 +82,42 @@ DIMACS reference solution    ████░░░░░  0.29%
 PyVRP (2024)                 ████░░░░░  0.40%  ← 我們使用的
 ```
 
-**六種問題類型分析（6 格小圖）**：
+**六種問題類型分析（6 格小圖，數據來自論文 Table 5）**：
 ```
-C1 (clustered, narrow TW)   ≈ 0.02%   🟢 Near optimal
-C2 (clustered, wide TW)     ≈ 0.05%   🟢 Near optimal
-R1 (random, narrow TW)      ≈ 0.7%    🟡 Acceptable
-R2 (random, wide TW)        ≈ 0.3%    🟢 Good
-RC1 (mixed, narrow TW)      ≈ 0.6%    🟡 Acceptable
-RC2 (mixed, wide TW)        ≈ 0.2%    🟢 Good
+C1 (clustered, narrow TW)   avg ≈ 0.27%   🟢 Best performance
+C2 (clustered, wide TW)     avg ≈ 0.04%   🟢 Near optimal
+R1 (random, narrow TW)      avg ≈ 0.72%   🟡 Hardest category
+R2 (random, wide TW)        avg ≈ 0.37%   🟢 Good
+RC1 (mixed, narrow TW)      avg ≈ 0.72%   🟡 Also challenging
+RC2 (mixed, wide TW)        avg ≈ 0.26%   🟢 Good
+
+Best single instance (C2_10_1):  GAP = 0.00% (exact optimum!)
+Worst single instance (RC1_10_6): GAP = 1.02%
+```
+
+**Competition 排名說明（深藍色 Callout）**：
+```
+"PyVRP would have ended up in second place 
+ in the DIMACS VRPTW competition."
+                        — Wouda et al., 2024
+
+  #1 HGS-DIMACS:  Mean Gap = 0.32%
+  #2 PyVRP:       Mean Gap = 0.40%   ← simplified, more maintainable
+  #3 DIMACS ref:  Mean Gap = 0.29%*
+
+  *DIMACS reference published after competition, harder to compare
 ```
 
 **特別成就 Callout（金色框）**：
 ```
 🏆 Extended runs: PyVRP improved 27 Best Known Solutions
    out of 300 Homberger & Gehring instances!
+
+→ Given enough compute time, PyVRP can push the frontier of what's known.
 ```
 
 **Presenter Notes**：
-> "The VRPTW results are slightly weaker than the competition version because PyVRP removed some complex, problem-specific components to improve maintainability. But notice the '27 BKS improved' achievement—this means PyVRP is still capable of world-class performance given more computation time."
+> "The VRPTW results reflect the deliberate trade-off the authors made: they removed complex, competition-specific optimizations to produce cleaner code. The paper explicitly says PyVRP 'would have ended up in second place' in DIMACS—so it's still world-class. The C2 instances are nearly perfectly solved (0.04% average gap), while R1 and RC1 with narrow time windows are the hardest. The '27 BKS improved' in extended runs is particularly impressive—this means PyVRP can break world records given more time."
 
 ---
 

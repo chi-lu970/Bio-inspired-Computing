@@ -8,23 +8,37 @@
 
 **主要內容：比較表格**
 
-| Solver | Type | Performance | Flexibility | License |
-|--------|------|-------------|-------------|---------|
-| **PyVRP** | Python + C++ (HGS) | ★★★★★ | ★★★★★ | MIT (Open) |
-| HGS-CVRP (Vidal 2022) | Pure C++ | ★★★★★ | ★★☆☆☆ | MIT |
-| LKH-3 (Helsgaun) | C (Lin-Kernighan) | ★★★★☆ | ★☆☆☆☆ | Academic only |
-| OR-Tools (Google) | C++/Python | ★★★☆☆ | ★★★★☆ | Apache |
-| VRPSolver | Exact solver | ★★★★★ (exact) | ★★★☆☆ | Academic only |
-| VROOM | C++ | ★★★☆☆ | ★★★☆☆ | Open |
+| Solver | Type | Performance | Flexibility | License | 論文原文評語 |
+|--------|------|-------------|-------------|---------|------------|
+| **PyVRP** | Python + C++ (HGS) | ★★★★★ | ★★★★★ | MIT (Open) | Unique combination of scope, performance, flexibility, ease-of-use |
+| HGS-CVRP (Vidal 2022) | Pure C++ | ★★★★★ | ★★☆☆☆ | MIT | Customisation requires changes to C++ source code |
+| LKH-3 (Helsgaun) | C (Lin-Kernighan) | ★★★★☆ | ★☆☆☆☆ | Academic only | Hard to customise; non-commercial license |
+| OR-Tools (Google) | C++/Python | ★★★☆☆ | ★★★★☆ | Apache | "Its performance is far from the state of the art" |
+| VRPSolver | Exact solver | ★★★★★ (exact) | ★★★☆☆ | Academic only | "Does not scale to instances with more than a few hundred customers" |
+| VROOM | C++ | ★★★☆☆ | ★★★☆☆ | Open | "Unable to compete with state-of-the-art algorithms" |
 
-**橘色 Callout**：
+**論文直接引語 Callout（橘色框）**：
 ```
-PyVRP achieves top-tier performance AND remains fully customizable in Python.
-No competitor offers all three: speed + flexibility + open license.
+"While each of these projects has their own merit, PyVRP has a unique combination 
+of scope, performance, flexibility and ease-of-use, making it a useful addition 
+to this set of projects."
+                                                        — Wouda et al., 2024
+```
+
+**特別背景 — ML 研究角度（補充）**：
+```
+The authors explicitly target ML researchers:
+"We especially hope that PyVRP will help machine learning (ML) researchers 
+ interested in vehicle routing to easily build on the state-of-the-art, 
+ and move beyond LKH-3 as the most commonly used baseline."
+                                                        — Wouda et al., 2024
+
+LKH-3 had been the de-facto baseline in VRP+ML research for years.
+PyVRP provides a significantly stronger and more flexible alternative.
 ```
 
 **Presenter Notes**：
-> "PyVRP stands out because it achieves nearly the same solution quality as specialized C++ solvers, while being fully customizable in Python. Google's OR-Tools is widely used in industry but falls significantly short on solution quality for academic benchmarks."
+> "The authors directly critique each competitor in the paper. LKH-3, despite being widely used in ML research as a baseline, is only available under an academic non-commercial license and is hard to customize. OR-Tools from Google is convenient but the paper explicitly states its 'performance is far from the state of the art.' PyVRP is the only solver offering top-tier performance, MIT license, AND Python-level customization."
 
 ---
 
@@ -63,13 +77,24 @@ Kobayashi)  windowed VRP   SWAP*         solver
 - Biased Fitness 公式
 
 **2024 — PyVRP（Wouda, Lan, Kool）**：
-- Python + C++ 混合架構
-- 擴充支援 VRPTW
-- 可自定義交叉算子、多樣性指標
-- 改善 27 個 VRPTW 歷史最佳解
+- Python + C++ 混合架構（arXiv:2403.13795，INFORMS JoC 2024）
+- 擴充支援 VRPTW；SWAP* 加入時間窗 caching + 提早終止
+- 可自定義交叉算子、多樣性指標、鄰域結構
+- **簡化移除**競賽特化組件（more robust, less overfitted）
+- 延長計算改善 27 個 H&G 歷史最佳解
+
+**重要設計取捨引語**：
+```
+"Complex components with limited contribution to the overall performance 
+have been removed to strike a balance between simplicity and performance."
+                                                        — Wouda et al., 2024
+
+→ PyVRP would have ranked 2nd (not 1st) in DIMACS VRPTW competition.
+  Trade-off: slightly lower performance, much higher maintainability.
+```
 
 **Presenter Notes**：
-> "PyVRP didn't invent HGS from scratch. It took 14 years of research, starting from the SREX crossover operator in 2010, through Vidal's original HGS in 2013, to the 2024 open-source Python package. What the authors contributed was making this research accessible and extensible."
+> "PyVRP didn't invent HGS from scratch. It took 14 years of research, starting from the SREX crossover operator in 2010, through Vidal's original HGS in 2013, to the 2024 open-source Python package. Critically, the authors made a deliberate trade-off: they removed some competition-specific optimizations to make the code cleaner and more maintainable. This explains why PyVRP performs slightly below HGS-DIMACS on VRPTW benchmarks."
 
 ---
 

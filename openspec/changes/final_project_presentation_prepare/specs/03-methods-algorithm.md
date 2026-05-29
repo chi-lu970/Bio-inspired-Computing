@@ -125,23 +125,47 @@ Exchange(3,3)    Swap two 3-customer sequences
 **Section B — Route Operators（右欄）**：
 
 ```
-RELOCATE*   Find best single-customer move 
-            across ALL route pairs
+RELOCATE*   Find and apply the best (1,0)-exchange between two routes.
+            Uses (N,M)-exchange node operator with N=1, M=0.
 
-SWAP*       Find best customer swap between 
-            two routes (not position-bound)
-            → PyVRP adds: time-window caching,
-              early termination
+SWAP*       Find best customer swap between two routes.
+            (Vidal 2022 original; PyVRP enhancements:)
+            ① Time window support added
+            ② Further caching for efficiency  
+            ③ Earlier stopping for "known-bad" moves
+            Key: swapped customers NOT inserted in each other's original position
+                 → each inserted into the BEST location in the other route
+```
+
+**C++ Template 機制（重點技術細節）**：
+```
+(N,M)-exchange 使用 C++ template mechanism：
+  template<int N, int M> class Exchange { ... };
+
+After compilation → efficient, specialised operator implementations 
+for each (N,M) pair. Zero runtime overhead from generalization.
+This is why 9 exchange variants can coexist with no performance penalty.
+
+"We implement (N,M)-exchange using C++'s template mechanism, which after 
+ compilation results in efficient, specialised operator implementations 
+ for any N and M." — Wouda et al., 2024
 ```
 
 **稀疏鄰域說明（底部）**：
 ```
-Granular Neighbourhood: each customer only checks k=40 nearest neighbors
-Reduces complexity from O(n²) to O(k×n) — makes large instances feasible
+Granular Neighbourhood (Toth & Vigo 2003):
+  CVRP: k=20 neighbors  |  VRPTW: k=40 neighbors (time windows need larger set)
+  Reduces complexity from O(n²) to O(k×n)
+
+Proximity formula (VRPTW):
+  prox(i,j) = dist(i,j) 
+             + 0.2 × max(e_j - t_ij - s_i - l_i, 0)   ← wait time penalty
+             + 1.0 × max(e_i + s_i + t_ij - l_j, 0)   ← time warp penalty
+             - prize(j)
 ```
 
 **Presenter Notes**：
-> "The local search is where C++ earns its keep—these 13 operators run thousands of times per iteration. The granular neighbourhood trick is key: instead of checking all possible moves, each customer only considers its 40 nearest neighbors, reducing search time dramatically."
+> "The local search is where C++ earns its keep—these 13 operators run thousands of times per iteration. The paper's profiling confirms: local search accounts for 80-90% of total runtime. The C++ template trick is elegant: by parameterizing N and M as compile-time constants, the compiler generates 9 fully specialized implementations with zero generalization overhead. For VRPTW, the neighborhood size doubles from 20 to 40—because time windows mean spatially close customers aren't necessarily compatible, so a larger candidate set is needed."
 
 ---
 
@@ -176,16 +200,50 @@ Used in: parent selection (ensure parents are "different enough")
          survival selection (protect diverse solutions)
 ```
 
-**Biased Fitness 公式**：
+**Biased Fitness 公式（Vidal 2022 來源）**：
 ```
 biased_fitness(s) = rank_quality(s) × (1 - elite_ratio)
                   + rank_diversity(s) × elite_ratio
 
+elite_ratio = nb_elite / min_pop_size = 4 / 25 = 0.16
+
 Both quality AND diversity matter for survival.
 ```
 
+**Figure 1 說明（論文 p.12，可截圖引用）**：
+
+論文 Figure 1 展示了一次完整求解過程的四格統計圖，是闡述 HGS 動態行為的關鍵圖表：
+
+```
+┌──────────────────┐  ┌──────────────────┐
+│  Avg. Diversity  │  │    Objectives    │
+│  (feasible /     │  │  (feas. best,    │
+│   infeasible)    │  │   infeas. best,  │
+│                  │  │   feas. avg, ... │
+│ 🔑 鋸齒狀：每次   │  │ 🔑 穩定下降：    │
+│    淘汰後多樣性   │  │    GA+LS 有效    │
+│    立即上升       │  │    收斂          │
+└──────────────────┘  └──────────────────┘
+┌──────────────────┐  ┌──────────────────┐
+│  Iteration       │  │  Best Solution   │
+│  Runtimes (sec)  │  │  (route map)     │
+│                  │  │                  │
+│ 🔑 每次迭代耗時   │  │ 🔑 完整路線圖     │
+│    穩定（C++速度）│  │    視覺化結果     │
+└──────────────────┘  └──────────────────┘
+```
+
+**重要觀察（引自論文 Figure 1 caption）**：
+```
+"It is clear from this figure that periodic survivor selection 
+ improves diversity."
+                                    — Wouda et al., 2024
+
+→ 多樣性圖的鋸齒形狀直接證明：族群管理機制有效防止早熟收斂
+```
+
 **Presenter Notes**：
-> "Why keep infeasible solutions? Because they might contain excellent route structures—just slightly violating a capacity constraint. The dynamic penalty system converts hard constraints into soft ones, allowing the algorithm to explore a larger solution space and escape local optima."
+> "Why keep infeasible solutions? Because they might contain excellent route structures—just slightly violating a capacity constraint. The dynamic penalty system converts hard constraints into soft ones, allowing the algorithm to explore a larger solution space and escape local optima. The paper's Figure 1 is a great visualization to show in the presentation—the sawtooth pattern in the diversity chart directly demonstrates that survivor selection is working: every time the population gets trimmed, diversity jumps back up."
 
 ---
 

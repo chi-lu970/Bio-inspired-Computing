@@ -116,21 +116,29 @@ Key Takeaways:
 ```
 [1] Wouda, N.A., Lan, L., Kool, W. (2024). PyVRP: A High-Performance 
     VRP Solver Package. INFORMS Journal on Computing, 36(4), 943–955.
+    arXiv:2403.13795v2 [cs.NE]
 
 [2] Vidal, T. (2022). Hybrid genetic search for the CVRP: Open-source 
-    implementation and SWAP* improvement. Computers & Operations Research.
+    implementation and SWAP* improvement. Computers & Operations Research, 140, 105643.
 
-[3] Vidal, T., et al. (2013). A hybrid genetic algorithm with adaptive 
-    diversity management for VRP. Computers & Operations Research, 40(1).
+[3] Vidal, T., Crainic, T.G., Gendreau, M., Prins, C. (2013). A hybrid 
+    genetic algorithm with adaptive diversity management for a large class 
+    of VRP with time-windows. Computers & Operations Research, 40(1), 475–489.
 
-[4] Nagata, Y., Kobayashi, S. (2010). Selective Route Exchange Crossover. 
-    Parallel Problem Solving from Nature (PPSN), 536–545.
+[4] Nagata, Y., Kobayashi, S. (2010). A memetic algorithm for the pickup and 
+    delivery problem with time windows using SREX crossover. PPSN XI, 536–545.
 
-[5] Uchoa, E., et al. (2017). New benchmark instances for the CVRP. 
-    European Journal of Operational Research, 257(3).
+[5] Toth, P., Vigo, D. (2003). The Granular Tabu Search and Its Application 
+    to the Vehicle-Routing Problem. INFORMS J. on Computing, 15(4), 333–346.
 
-[6] Homberger, J., Gehring, H. (1999). Two evolutionary metaheuristics 
-    for VRPTW. INFORMS Journal on Computing.
+[6] Uchoa, E., et al. (2017). New benchmark instances for the Capacitated VRP.
+    European Journal of Operational Research, 257(3), 845–858.
+
+[7] Homberger, J., Gehring, H. (1999). Two evolutionary metaheuristics for VRPTW.
+    INFOR: Information Systems and Operational Research, 37(3), 297–318.
+
+[8] Kool, W., et al. (2022). Hybrid Genetic Search for the VRPTW: A High-Performance
+    Implementation. Technical report (HGS-DIMACS, DIMACS competition winner).
 ```
 
 **底部聯繫資訊**：
@@ -165,7 +173,7 @@ HGS 在 VRP 標準 Benchmark 上的表現明顯優於螞蟻演算法（ACO）和
 ### Q4：HGS 的「遺傳」成分到底扮演多重要的角色？
 
 **回答**：
-這是個好問題。實際上，局部搜尋（LS）佔了 80–90% 的運行時間，也貢獻了大部分的解質量提升。遺傳操作（交叉）的核心價值是「多樣性維護」——確保搜尋不會困在局部最優。單純的局部搜尋（如模擬退火）容易陷入局部最優，而 GA 的族群機制提供了多個不同的搜尋起點，讓算法能夠逃脫局部陷阱。
+這是個好問題。根據論文，局部搜尋（LS）佔了 **80–90% 的運行時間**（論文 p.7："Software profiling suggests that in PyVRP it accounts for 80-90% of the runtime"），也貢獻了大部分的解質量提升。遺傳操作（交叉）的核心價值是「多樣性維護」——確保搜尋不會困在局部最優。單純的局部搜尋（如模擬退火）容易陷入局部最優，而 GA 的族群機制提供了多個不同的搜尋起點，讓算法能夠逃脫局部陷阱。論文 Figure 1 的多樣性圖（鋸齒狀曲線）直接驗證了族群管理機制的有效性。
 
 ### Q5：為什麼要自己實作前端，不直接用 PyVRP 的 CLI？
 
