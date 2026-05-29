@@ -313,6 +313,18 @@ Key Parameters:
 • Neighbourhood: k=20 (CVRP) / k=40 (VRPTW)
 ```
 
+**右側下方（橘色框）**：TimedNoImprovement Stop Criterion
+```
+Web UI 設計決策：
+  連續 500 次迭代無改善 → 提早停止
+
+為什麼？
+  預設 20,000 次無改善才停止 → 等待太久
+  Web 使用者等待上限約 10–30 秒
+  提早停止 = 完美配合 UI 等待極限
+  且解品質通常在 400–600 次迭代已收斂
+```
+
 **底部**：`HGS = GA explores broadly, LS exploits deeply — neither alone is as effective`
 
 ---
@@ -533,6 +545,21 @@ Protocol:  JSON REST API
 Language:  Python 3.11
 ```
 
+**架構設計原則（右側下方，深色框）**：
+```
+零侵入封裝 (Zero-Intrusion Encapsulation)
+──────────────────────────────────────────
+不修改 PyVRP 核心任何一行程式碼。
+所有擴充功能封裝於外圍層（coord / solver / serializer）。
+→ PyVRP 套件升版時，Web 系統可無痛跟進。
+```
+
+**資料流水線（底部橫條，顯示資料轉換路徑）**：
+```
+WGS84 經緯度  →  UTM 整數座標  →  HGS 求解  →  逐站時間推算  →  JSON  →  地圖渲染
+ (前端輸入)      (coord.py)      (solver.py)   (serializer.py)           (Leaflet.js)
+```
+
 **底部**：`"Fill the form → Click Solve → See the map" — Zero programming required`
 
 ---
@@ -542,55 +569,68 @@ Language:  Python 3.11
 **標籤**：METHODS  
 **標題**：3 Non-Trivial Engineering Problems We Solved
 
-**三欄版面（各有標頭色塊）**：
+> 💡 **講稿提示**：「期中報告我提出了三個現實世界的痛點，Final 就是這三個痛點的完整解法。」
+
+**頂部：痛點動機框（橘色橫條，三格）**
+
+| 痛點 1 | 痛點 2 | 痛點 3 |
+|--------|--------|--------|
+| 現況：系統底層只接受整數平面座標 | 現況：預設鄰域大小為 k=20 | 現況：求解結果只有停靠順序 |
+| **痛點**：GPS 是 WGS84 浮點經緯度，無法直接輸入 | **痛點**：小問題每次迭代太慢，時限內解質量差 | **痛點**：使用者看不到各站抵達/等待時間，無法驗證合理性 |
+
+**三欄版面（各有標頭色塊，對應上方痛點）**：
 
 **欄 1（藍）：🌐 Coordinate System Mismatch**
 ```
-Problem:
+Problem (痛點):
 PyVRP requires INTEGER planar coordinates.
 Users input WGS84 lat/lng (floating point).
-Naïve: multiply degrees → severe distortion
-at Taiwan's latitude range.
+Naïve multiplication → severe distortion
+at Taiwan's latitude (25°N range).
 
 Solution:
-WGS84 → UTM (EPSG:32651/32650)
+WGS84 → UTM Zone 51N (EPSG:32651)
          via pyproj library
 UTM meters × scale factor 10
-→ 0.1-meter precision, no distortion ✓
+→ 0.1-meter precision, zero distortion ✓
 ```
 
-**欄 2（青）：🔍 Small Problem Runs Too Slow**
+**欄 2（青）：🔍 Neighbourhood Too Large for Small Problems**
 ```
-Problem:
-Default nb_granular=20 for 16 clients
-→ nearly exhaustive neighbourhood search
-→ too few LS iterations within time limit
+Problem (痛點):
+Default nb_granular = 20 for only 16 clients
+→ nearly exhaustive search each LS call
+→ each iteration extremely slow
+→ few iterations in 10-sec limit
 → poor solution quality
 
 Solution:
 NB_GRANULAR = min(7, num_clients − 1)
 Smaller neighbourhood → faster iterations
-Same time → far more iterations
+Same wall-clock time → far more iterations
 → significantly better solutions ✓
 ```
 
-**欄 3（綠）：⏱ Per-Stop Arrival Time Unknown**
+**欄 3（綠）：⏱ No Per-Stop Timeline in Result**
 ```
-Problem:
-PyVRP only gives visit ORDER.
-Does not provide per-stop times.
-UI needs arrival/wait/departure timeline.
+Problem (痛點):
+PyVRP Route object gives visit ORDER only.
+No per-stop arrival / departure times.
+Decision-makers need a timeline to verify
+feasibility and trust the solution.
 
-Solution (serializer.py walkthrough):
+Solution (serializer.py):
 departure = depot.tw_early
 for each stop:
-  arrival    = prev_departure + travel_time
-  wait       = max(0, stop.tw_early − arrival)
-  departure  = max(arrival, stop.tw_early)
-              + service_minutes ✓
+  arrival   = prev_departure + travel_time
+  wait      = max(0, tw_early − arrival)
+  departure = max(arrival, tw_early)
+             + service_minutes ✓
 ```
 
 **底部**：`Real engineering = bridging the gap between research API and user expectations`
+
+**講稿**：「這三個問題不在任何 PyVRP 教學裡，是實際構建和測試系統時才發現的。」
 
 ---
 
