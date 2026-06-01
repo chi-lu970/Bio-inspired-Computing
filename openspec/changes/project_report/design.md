@@ -4,6 +4,25 @@
 
 ---
 
+## 進度快照（2026-06-01）
+
+| 設計項目 | 狀態 | 備註 |
+|---------|------|------|
+| LaTeX 模板（IEEEtran）| ✅ 已套用 | `report/main.tex` 使用 `\documentclass[conference]{IEEEtran}` |
+| 5 章節結構 | ✅ 已完成 | Intro / Related Work / Methods / Results / Conclusion 全部寫入 |
+| 摘要（~130 字）| ✅ 已完成 | 4 句話結構：問題→方法→實作→結果 |
+| 數學公式（4 條）| ✅ 已完成 | 目標函數、Biased Fitness、BPD、Penalty |
+| Algorithm 1 虛擬碼 | ✅ 已完成 | `algorithm` + `algpseudocode` 環境 |
+| Table I（CVRP benchmark）| ✅ 已完成 | 含 BKS / HGS-CVRP / HGS-2012 / PyVRP |
+| Table II（VRPTW benchmark）| ✅ 已完成 | 含 BKS / HGS-DIMACS / PyVRP |
+| Table III（HGS 參數表）| ✅ 已完成 | 新增於 Methods III-B，7 個關鍵參數 |
+| Fig. 1（HGS 流程圖）| ✅ 已完成 | `hgs_algorithm_flowchart.pdf` |
+| Fig. 2（Web 截圖）| ✅ 已完成 | `fig2_web_demo.png` |
+| 引用 12 篇 | ✅ 已完成 | `references.bib` 含 12 筆 IEEE 格式 |
+| Bio-inspired 連結 | ✅ 已完成 | 每章節均有 SREX/GA/diversity 類比說明 |
+
+---
+
 ## 1. IEEE 格式規範
 
 ### 1.1 版面設定
@@ -71,39 +90,41 @@ Vehicle Routing with Interactive Visualization}
 
 ### 必要圖表（影響頁數，至少 2 圖 + 1 表）
 
-| 編號 | 類型 | 內容 | 放置章節 |
-|------|------|------|---------|
-| Fig. 1 | 流程圖 | HGS 主迴圈（GA + LS 混合）| Methods |
-| Fig. 2 | 截圖 | Web 系統求解結果地圖 | Results |
-| Table I | 比較表 | CVRP benchmark（PyVRP vs HGS-CVRP vs BKS）| Results |
-| Table II | 比較表（選用）| VRPTW benchmark | Results |
+| 編號 | 類型 | 內容 | 放置章節 | 狀態 |
+|------|------|------|---------|------|
+| Fig. 1 | 流程圖 | HGS 主迴圈（GA + LS 混合）| Methods | ✅ 已完成 |
+| Fig. 2 | 截圖 | Web 系統求解結果地圖 | Results | ✅ 已完成 |
+| Table I | 比較表 | CVRP benchmark（PyVRP vs HGS-CVRP vs BKS）| Results | ✅ 已寫入 main.tex |
+| Table II | 比較表 | VRPTW benchmark | Results | ✅ 已寫入 main.tex |
 
 ### 建議加入（增加頁數）
 
-| 編號 | 類型 | 內容 | 放置章節 |
-|------|------|------|---------|
-| Fig. 3 | 架構圖 | 四層系統架構 | Methods |
-| Fig. 4 | 論文截圖 | 論文 Figure 1（diversity + objectives）| Results |
-| Table III | 參數表 | HGS 關鍵參數（Table 3 節選）| Methods |
+| 編號 | 類型 | 內容 | 放置章節 | 狀態 |
+|------|------|------|---------|------|
+| Fig. 3 | 架構圖 | 四層系統架構 | Methods | ⬜ 選用，main.tex 有佔位符可取消註解 |
+| Fig. 4 | 論文截圖 | 論文 Figure 1（diversity + objectives）| Results | ⬜ 選用 |
+| Table III | 參數表 | HGS 關鍵參數（Table 3 節選）| Methods | ✅ 已寫入 main.tex |
 
 ---
 
 ## 4. 引用文獻規劃
 
-需引用至少 8 篇，按 IEEE 格式（方括號編號）：
+> ✅ `references.bib` 已生成，共 **12 篇**，超過最低 8 篇要求。
 
-| 編號 | 引用 | 引用位置 |
-|------|------|---------|
-| [1] | Wouda et al. 2024（PyVRP 論文）| 全文核心引用 |
-| [2] | Vidal et al. 2013（HGS 原始論文）| Methods |
-| [3] | Vidal 2022（HGS-CVRP）| Related Work + Methods |
-| [4] | Nagata & Kobayashi 2010（SREX）| Methods |
-| [5] | Toth & Vigo 2003（Granular Neighbourhood）| Methods |
-| [6] | Uchoa et al. 2017（CVRP X benchmark）| Results |
-| [7] | Homberger & Gehring 1999（VRPTW benchmark）| Results |
-| [8] | Kool et al. 2022（HGS-DIMACS）| Related Work |
-| [9] | Perron & Furnon 2022（OR-Tools）| Related Work |
-| [10] | Toth & Vigo 2014（VRP 教科書）| Introduction |
+| BibTeX key | 引用 | 引用位置 | 狀態 |
+|------------|------|---------|------|
+| `wouda2024pyvrp` | Wouda et al. 2024（PyVRP）| 全文核心 | ✅ |
+| `vidal2013hybrid` | Vidal et al. 2013（HGS 原始）| Methods / Related Work | ✅ |
+| `vidal2022hybrid` | Vidal 2022（HGS-CVRP）| Related Work + Methods | ✅ |
+| `nagata2010memetic` | Nagata & Kobayashi 2010（SREX）| Methods | ✅ |
+| `toth2003granular` | Toth & Vigo 2003（Granular）| Methods | ✅ |
+| `uchoa2017new` | Uchoa et al. 2017（X benchmark）| Results | ✅ |
+| `homberger1999two` | Homberger & Gehring 1999（H&G）| Results | ✅ |
+| `kool2022hybrid` | Kool et al. 2022（HGS-DIMACS）| Related Work | ✅ |
+| `ortools` | Perron & Furnon 2022（OR-Tools）| Related Work | ✅ |
+| `toth2014vehicle` | Toth & Vigo 2014（VRP 教科書）| Introduction | ✅ |
+| `helsgaun2017extension` | Helsgaun 2017（LKH-3）| Related Work | ✅ |
+| `pessoa2020generic` | Pessoa et al. 2020（VRPSolver）| Related Work | ✅ |
 
 ---
 

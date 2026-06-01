@@ -7,6 +7,23 @@
 
 ---
 
+## 進度快照（2026-06-01 完成）
+
+| 交付物 | 狀態 | 實際位置 |
+|--------|------|---------|
+| `main.tex` | ✅ | `report/main.tex` |
+| `references.bib` | ✅ | `report/references.bib` |
+| `hgs_algorithm_flowchart.pdf` | ✅ | `report/figures/` |
+| `fig2_web_demo.png` | ✅ | `report/figures/` |
+| `TermProject_414085193.pdf` | ✅ | Overleaf 編譯完成 |
+| 源碼目錄結構 | ✅ | `TermProject_414085193/source/` |
+| `README_reproduction.md` | ✅ | `TermProject_414085193/` |
+| `.zip` 打包 | ✅ | `TermProject_414085193.zip` |
+
+> **截止日期**：2026-06-26 23:59（UTC+8）— 待上傳至課程系統。
+
+---
+
 ## 1. 核心問題釐清
 
 ### 1.1 要交付什麼
@@ -58,18 +75,29 @@
 
 ## 3. 交付物清單
 
+> 以下為實際已建立的目錄結構（✅ = 檔案已存在）：
+
 ```
 TermProject_414085193.zip
+├── README_reproduction.md                  ✅ 復現說明文件
 ├── report/
-│   ├── TermProject_414085193.pdf          ← 最終 PDF
-│   ├── main.tex                            ← LaTeX 源碼（若使用）
-│   └── figures/                            ← 圖表
-├── source/
-│   ├── webapp/                             ← 系統源碼
-│   ├── run_server.py
-│   └── pyproject.toml
-├── data/
-│   ├── taipei_demo.json                    ← 範例輸入資料
-│   └── taipei_711_night.json
-└── README_reproduction.md                  ← 復現說明文件
+│   ├── TermProject_414085193.pdf           ⬜ 待 Overleaf 編譯後放入
+│   ├── main.tex                            ✅ LaTeX 源碼已生成
+│   ├── references.bib                      ✅ 12 篇 IEEE 格式引用
+│   └── figures/
+│       ├── fig1_hgs_flowchart.png          ⬜ 待截圖（mermaid.live）
+│       └── fig2_web_demo.png               ⬜ 待截圖（系統前端）
+└── source/
+    ├── run_server.py                        ✅
+    ├── pyproject.toml                       ✅
+    └── webapp/                              ✅ 完整源碼
+        ├── backend/
+        │   ├── main.py
+        │   ├── api/（routes.py、schemas.py）
+        │   ├── services/（coord.py、solver.py、serializer.py、exceptions.py）
+        │   └── examples/（taipei_demo.json、taipei_711_night.json）
+        └── frontend/
+            ├── index.html
+            ├── css/style.css
+            └── js/（api.js、map.js、form.js）
 ```

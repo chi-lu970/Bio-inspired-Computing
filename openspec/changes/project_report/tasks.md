@@ -6,23 +6,19 @@
 
 ---
 
-## 進度快照（2026-06-01 更新）
+## 進度快照（2026-06-01 完成）
 
 | 階段 | 狀態 | 說明 |
 |------|------|------|
-| Phase 1：圖表資產 | ⬜ 待完成 | fig1（流程圖）、fig2（截圖）需手動製作 |
-| Phase 2：LaTeX 檔 | ✅ 已完成 | `report/main.tex` + `report/references.bib` 已生成 |
-| Phase 2：Overleaf 編譯 | ⬜ 待完成 | 需上傳圖片後編譯 PDF |
-| Phase 3：內容審查 | ⬜ 待完成 | 編譯後核對 |
-| Phase 4：目錄結構 | ✅ 已完成 | `TermProject_414085193/` 已建立、源碼已複製 |
-| Phase 4：PDF 放入 + 打包 | ⬜ 待完成 | 編譯完 PDF 後執行 |
+| Phase 1：fig1 流程圖 | ✅ 已完成 | `hgs_algorithm_flowchart.pdf` |
+| Phase 1：fig2 系統截圖 | ✅ 已完成 | `fig2_web_demo.png` |
+| Phase 2：LaTeX 檔 | ✅ 已完成 | `report/main.tex` + `report/references.bib` |
+| Phase 2：Overleaf 編譯 | ✅ 已完成 | PDF 已產出 |
+| Phase 3：內容審查 | ✅ 已完成 | |
+| Phase 4：目錄結構 + 源碼 | ✅ 已完成 | `TermProject_414085193/` |
+| Phase 4：PDF 放入 + 打包 | ✅ 已完成 | `TermProject_414085193.zip` 待上傳 |
 
-**剩餘必做步驟（依序）**：
-1. [Task 1.1](#task-11hgs-主迴圈流程圖必要fig-1) — 畫 HGS 流程圖，存為 `report/figures/fig1_hgs_flowchart.png`
-2. [Task 1.2](#task-12web-系統求解結果截圖必要fig-2) — 啟動伺服器截圖，存為 `report/figures/fig2_web_demo.png`
-3. [Task 2.1](#task-21建立-overleaf-專案) — Overleaf 上傳圖片、編譯 PDF（≥ 5 頁）
-4. [Task 4.3](#task-43複製報告檔案) — 將 PDF 複製為 `TermProject_414085193/report/TermProject_414085193.pdf`
-5. [Task 4.4](#task-44打包-zip) — `Compress-Archive` 打包為 zip
+> **所有步驟完成。** 上傳 `TermProject_414085193.zip` 即完成提交。
 
 ---
 
@@ -41,26 +37,91 @@ Phase 4  打包提交                 ← 生成 TermProject_414085193.zip
 
 ### Task 1.1｜HGS 主迴圈流程圖（必要，Fig. 1）
 
-**目標**：繪製 HGS 演算法主迴圈，對應 report-draft.md 的 Algorithm 1。
+**目標**：截圖下方 Mermaid 流程圖，存為 `report/figures/fig1_hgs_flowchart.png`。
 
-**方法**（選一種）：
-- **draw.io（推薦）**：至 app.diagrams.net，使用 Flowchart 模板
-- **LaTeX TikZ**：直接在 main.tex 內用 tikzpicture 繪製
-- **Mermaid + 截圖**：用 mermaid.live 生成再截圖
+**截圖步驟**：
+1. 開啟 [mermaid.live](https://mermaid.live)
+2. 將下方程式碼**完整貼入**左側編輯區
+3. 右側預覽確認流程圖正確顯示
+4. 點右上角 **PNG** 按鈕下載（或 Win+Shift+S 截圖）
+5. 存為 `report\figures\fig1_hgs_flowchart.png`
 
-**流程圖內容**（按 Algorithm 1 pseudocode）：
+```mermaid
+flowchart TD
+    A([▶ 開始]) --> B
+
+    B["🔧 初始化族群 P
+    min_pop_size = 25 個隨機解
+    α = 20, β = 6  初始懲罰權重"]
+
+    B --> C
+
+    C(["🔁 迴圈開始"])
+
+    C --> D["👥 TournamentSelect P
+    選出親本 p₁, p₂
+    （基於 biased fitness 二元錦標賽）"]
+
+    D --> E["🧬 SREX p₁, p₂  →  子代 c
+    Selective Route Exchange 交叉
+    繼承 p₂ 完整路線 + 貪婪填入 p₁ 剩餘客戶"]
+
+    E --> F["🔍 LocalSearch c
+    11 個 Node 算子 + 2 個 Route 算子
+    粒度鄰域 k = 20 / 40"]
+
+    F --> G{rand < p_repair
+    且 c 不可行？}
+
+    G -- 是 --> H["🔧 修復搜尋
+    LocalSearch c, α×12, β×12
+    高懲罰強制導向可行解"]
+    H --> I
+
+    G -- 否 --> I
+
+    I["➕ P ← P ∪ c
+    將子代加入族群"]
+
+    I --> J{"| P | > n_min + n_gen
+    65 個上限？"}
+
+    J -- 是 --> K["✂ SurvivorSelection P
+    移除重複解
+    按 biased fitness 淘汰
+    縮回 n_min = 25"]
+    K --> L
+
+    J -- 否 --> L
+
+    L["⚖ UpdatePenalties P
+    每 50 / 100 代調整 α, β
+    目標：維持 43% 可行解比率
+    α × 1.34 若可行率 < 38%
+    α × 0.32 若可行率 > 48%"]
+
+    L --> M{"停止條件達成？
+    TimedNoImprovement
+    max_iterations = 500
+    或 MaxRuntime"}
+
+    M -- 否 --> C
+    M -- 是 --> N
+
+    N["🏆 返回最佳可行解"]
+    N --> O([⏹ 結束])
+
+    style A fill:#4CAF50,color:#fff,stroke:none
+    style O fill:#f44336,color:#fff,stroke:none
+    style C fill:#2196F3,color:#fff,stroke:none
+    style G fill:#FF9800,color:#fff,stroke:none
+    style J fill:#FF9800,color:#fff,stroke:none
+    style M fill:#9C27B0,color:#fff,stroke:none
+    style N fill:#4CAF50,color:#fff,stroke:none
+    style H fill:#FF5722,color:#fff,stroke:none
 ```
-開始 → 初始化族群(μ=25) → [迴圈開始]
-  → 選親本 → SREX 交叉 → 局部搜尋(11+2 operators)
-  → 評估 biased fitness → 更新族群（feasible/infeasible 各別）
-  → 存活者選取（縮到 min_pop_size=25）
-  → [每50代] 更新懲罰係數 α, β
-  → 判斷停止條件（MaxRuntime / TimedNoImprovement）
-  → 是 → 返回最佳可行解 → 結束
-  → 否 → 回到迴圈開始
-```
 
-**輸出**：`figures/fig1_hgs_flowchart.pdf`（向量）或 `.png`（≥300 dpi）
+**輸出**：`report/figures/fig1_hgs_flowchart.png`（≥300 dpi）
 **LaTeX 插入位置**：Methods 章節，緊接 Algorithm 1 之後
 
 ---
