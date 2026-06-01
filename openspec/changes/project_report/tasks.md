@@ -6,6 +6,26 @@
 
 ---
 
+## 進度快照（2026-06-01 更新）
+
+| 階段 | 狀態 | 說明 |
+|------|------|------|
+| Phase 1：圖表資產 | ⬜ 待完成 | fig1（流程圖）、fig2（截圖）需手動製作 |
+| Phase 2：LaTeX 檔 | ✅ 已完成 | `report/main.tex` + `report/references.bib` 已生成 |
+| Phase 2：Overleaf 編譯 | ⬜ 待完成 | 需上傳圖片後編譯 PDF |
+| Phase 3：內容審查 | ⬜ 待完成 | 編譯後核對 |
+| Phase 4：目錄結構 | ✅ 已完成 | `TermProject_414085193/` 已建立、源碼已複製 |
+| Phase 4：PDF 放入 + 打包 | ⬜ 待完成 | 編譯完 PDF 後執行 |
+
+**剩餘必做步驟（依序）**：
+1. [Task 1.1](#task-11hgs-主迴圈流程圖必要fig-1) — 畫 HGS 流程圖，存為 `report/figures/fig1_hgs_flowchart.png`
+2. [Task 1.2](#task-12web-系統求解結果截圖必要fig-2) — 啟動伺服器截圖，存為 `report/figures/fig2_web_demo.png`
+3. [Task 2.1](#task-21建立-overleaf-專案) — Overleaf 上傳圖片、編譯 PDF（≥ 5 頁）
+4. [Task 4.3](#task-43複製報告檔案) — 將 PDF 複製為 `TermProject_414085193/report/TermProject_414085193.pdf`
+5. [Task 4.4](#task-44打包-zip) — `Compress-Archive` 打包為 zip
+
+---
+
 ## 概覽
 
 ```
@@ -135,28 +155,37 @@ Layer 4: Serializer    [Timeline reconstruction + JSON]
 
 ### Task 2.1｜建立 Overleaf 專案
 
-**推薦方式（Overleaf）**：
+> ✅ `report/main.tex` 與 `report/references.bib` 已生成，**不需要再從 latex-template.md 複製**。
+> 本步驟只需：上傳檔案 + 放入圖片 + 編譯。
+
+**Overleaf 上傳步驟**：
 1. 登入 [overleaf.com](https://www.overleaf.com)
-2. 點擊「New Project」→「IEEE Conference」或「Blank Project」
-3. 若選 Blank，需上傳 `IEEEtran.cls`（從 CTAN 下載）
-4. 將 `main.tex` 內容貼入（來源：`specs/latex-template.md`）
-5. 上傳 `references.bib`（來源：`specs/latex-template.md` 末段）
+2. 點擊「New Project」→「Upload Project」
+3. 將 `report/` 資料夾打包上傳（含 `main.tex`、`references.bib`、`figures/`）
+   - 或手動建立 Blank Project，上傳各個檔案
+4. Overleaf 已內建 `IEEEtran.cls`（選 IEEE Conference 模板即有），**不需額外上傳**
+5. 點擊「Compile」，確認無錯誤
+6. 確認頁數 ≥ 5（若不足，見 Task 2.4 補足方案）
+7. 下載 PDF
 
 **本機 LaTeX 方式**（MiKTeX / TeX Live）：
-```bash
-mkdir report && cd report
-# 複製 main.tex 和 references.bib
+```powershell
+cd C:\school\workSpace\Bio-inspired-Computing\report
 pdflatex main.tex
 bibtex main
 pdflatex main.tex
 pdflatex main.tex   # 第三次確保交叉引用正確
+# 開啟 PDF
+start main.pdf
 ```
 
 ---
 
-### Task 2.2｜複製 report-draft.md 內容至 LaTeX
+### Task 2.2｜複製 report-draft.md 內容至 LaTeX ✅
 
-**步驟**：將 `specs/report-draft.md` 中各章節文字轉換為 LaTeX 語法。
+> **已完成**：`report/main.tex` 已包含全部章節（Introduction / Related Work / Methods / Results / Conclusion），並在原稿基礎上加入 Table III（參數表）與更詳細的 bio-inspired 連結描述。**此步驟可跳過。**
+
+**步驟**（供參考，若需手動核對）：將 `specs/report-draft.md` 中各章節文字轉換為 LaTeX 語法。
 
 **轉換對照表**：
 
@@ -302,7 +331,9 @@ start main.pdf  # Windows
 
 ## Phase 4 — 打包提交
 
-### Task 4.1｜建立提交目錄結構
+### Task 4.1｜建立提交目錄結構 ✅
+
+> **已完成**：`TermProject_414085193/` 目錄已建立，結構如下（`__pycache__` 已清除）。
 
 ```
 TermProject_414085193/
@@ -346,7 +377,10 @@ TermProject_414085193/
 
 ---
 
-### Task 4.2｜複製源碼並確認可執行
+### Task 4.2｜複製源碼並確認可執行 ✅
+
+> **已完成**：`source/webapp/`、`source/run_server.py`、`source/pyproject.toml`、`README_reproduction.md` 均已複製至提交目錄。
+> 仍建議執行下方驗證指令確認源碼正常運行。
 
 ```powershell
 # 建立提交目錄
@@ -372,16 +406,15 @@ uv run --python 3.11 python run_server.py
 
 ### Task 4.3｜複製報告檔案
 
+> `main.tex` 和 `references.bib` 已在 `TermProject_414085193\report\` 中。
+> 只需補上圖片（fig1、fig2）和 Overleaf 編譯完成的 PDF。
+
 ```powershell
-# 複製 PDF（Phase 2 編譯產出）
-Copy-Item "main.pdf" "TermProject_414085193\report\TermProject_414085193.pdf"
+# 複製 PDF（Overleaf 下載後）
+Copy-Item "report\main.pdf" "TermProject_414085193\report\TermProject_414085193.pdf"
 
-# 複製 LaTeX 源碼
-Copy-Item "main.tex" "TermProject_414085193\report\"
-Copy-Item "references.bib" "TermProject_414085193\report\"
-
-# 複製圖表
-Copy-Item "figures\*" "TermProject_414085193\report\figures\"
+# 複製圖表（確保圖片也同步進去）
+Copy-Item "report\figures\*" "TermProject_414085193\report\figures\" -Force
 ```
 
 ---
@@ -426,23 +459,38 @@ Get-ChildItem -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -
 
 ---
 
-## 快速執行順序參考
+## 快速執行順序參考（2026-06-01 更新後）
 
 ```
-Day 1（1–2 小時）
-  ├── Task 1.2  啟動伺服器截圖（最快，10 分鐘）
-  ├── Task 1.1  用 draw.io 畫 HGS 流程圖（30 分鐘）
-  └── Task 2.1  建立 Overleaf 專案，貼入 latex-template.md（20 分鐘）
+✅ 已完成（不需再做）
+  ├── main.tex / references.bib 已生成 → report/
+  ├── TermProject_414085193/ 目錄結構已建立
+  └── 源碼（webapp、run_server.py）已複製進去
 
-Day 2（2–3 小時）
-  ├── Task 2.2  將 report-draft.md 轉入 LaTeX（60 分鐘）
-  ├── Task 2.3  插入 Fig.1 + Fig.2 + Table I + Table II（30 分鐘）
-  ├── Task 2.4  編譯，檢查頁數（若 < 5 頁，加 Fig.3 或 Table III）
-  └── Task 3.1–3.4  審查格式、數據、bio-inspired 連結（30 分鐘）
+⬜ 剩餘工作（約 1.5–2 小時）
 
-Day 3（1 小時）
-  ├── Task 4.1–4.4  打包提交（30 分鐘）
-  └── Task 4.5  最終核查（15 分鐘）
+Step 1（30 分鐘）｜製作 Fig. 1 — HGS 流程圖
+  → 至 app.diagrams.net，按 Task 1.1 內容繪製
+  → 存為 report\figures\fig1_hgs_flowchart.png（≥300 dpi）
+
+Step 2（10 分鐘）｜製作 Fig. 2 — Web 截圖
+  → uv run --python 3.11 python run_server.py
+  → 開啟 http://localhost:8000/，載入「台北日班」，點求解後截圖
+  → 存為 report\figures\fig2_web_demo.png
+
+Step 3（20 分鐘）｜Overleaf 編譯 PDF
+  → 登入 overleaf.com → New Project → Upload Project
+  → 上傳 report\ 整個資料夾（含 main.tex、references.bib、figures\）
+  → Compile，確認頁數 ≥ 5
+  → 下載 PDF，存為 report\main.pdf
+
+Step 4（5 分鐘）｜放入 PDF 並打包
+  → Copy-Item "report\main.pdf" "TermProject_414085193\report\TermProject_414085193.pdf"
+  → Copy-Item "report\figures\*" "TermProject_414085193\report\figures\" -Force
+  → Compress-Archive -Path "TermProject_414085193" -DestinationPath "TermProject_414085193.zip" -Force
+
+Step 5（10 分鐘）｜Task 4.5 最終核查
+  → 對照 checklist 確認 PDF 頁數、章節、引用數、圖數、zip 名稱
 ```
 
 ---
