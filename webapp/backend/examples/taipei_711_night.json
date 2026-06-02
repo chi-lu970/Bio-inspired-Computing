@@ -17,11 +17,6 @@
       "time_window": { "start": 60, "end": 360 }, "demand": 17, "service_minutes": 10
     },
     {
-      "id": "S103", "name": "7-ELEVEN 中山圓山店",
-      "location": { "lat": 25.0730, "lng": 121.5220 },
-      "time_window": { "start": 60, "end": 360 }, "demand": 30, "service_minutes": 15
-    },
-    {
       "id": "S104", "name": "7-ELEVEN 北投石牌店",
       "location": { "lat": 25.1170, "lng": 121.4970 },
       "time_window": { "start": 60, "end": 360 }, "demand": 21, "service_minutes": 11
