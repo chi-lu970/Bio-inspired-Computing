@@ -1,0 +1,79 @@
+{
+  "_comment": "7-11 板橋下午補貨班（12 家門市，輻射配送）。DC 板橋物流中心 13:30 出車，各店時窗 14:00–18:00。12 家門市從倉庫向四周輻射分布（N/NNE/NE/E/SE/SSE/S/SSW/SW/W/NW/NNW）。時間單位：分鐘（從午夜起算）。速度：35 km/h。",
+  "depot": {
+    "name": "統一超商 板橋物流中心",
+    "location": { "lat": 25.0141, "lng": 121.4628 },
+    "time_window": { "start": 810, "end": 1140 }
+  },
+  "stores": [
+    {
+      "id": "S01", "name": "7-ELEVEN 蘆洲長安店",
+      "location": { "lat": 25.0780, "lng": 121.4580 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 26, "service_minutes": 13
+    },
+    {
+      "id": "S02", "name": "7-ELEVEN 三重重陽店",
+      "location": { "lat": 25.0714, "lng": 121.4891 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "S03", "name": "7-ELEVEN 三重大同店",
+      "location": { "lat": 25.0580, "lng": 121.5040 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 24, "service_minutes": 12
+    },
+    {
+      "id": "S04", "name": "7-ELEVEN 萬華艋舺店",
+      "location": { "lat": 25.0334, "lng": 121.4978 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "S05", "name": "7-ELEVEN 中正汀州店",
+      "location": { "lat": 25.0145, "lng": 121.5292 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 26, "service_minutes": 13
+    },
+    {
+      "id": "S06", "name": "7-ELEVEN 永和頂溪店",
+      "location": { "lat": 25.0081, "lng": 121.5078 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "S07", "name": "7-ELEVEN 中和景平店",
+      "location": { "lat": 24.9994, "lng": 121.5001 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 24, "service_minutes": 12
+    },
+    {
+      "id": "S08", "name": "7-ELEVEN 中和南勢角店",
+      "location": { "lat": 24.9780, "lng": 121.4912 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "S09", "name": "7-ELEVEN 土城延和店",
+      "location": { "lat": 24.9690, "lng": 121.4520 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "S10", "name": "7-ELEVEN 土城裕民店",
+      "location": { "lat": 24.9650, "lng": 121.4280 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "S11", "name": "7-ELEVEN 新莊化成店",
+      "location": { "lat": 25.0100, "lng": 121.4290 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "S12", "name": "7-ELEVEN 新莊中正店",
+      "location": { "lat": 25.0450, "lng": 121.4280 },
+      "time_window": { "start": 840, "end": 1080 }, "demand": 24, "service_minutes": 12
+    }
+  ],
+  "vehicle_types": [
+    { "name": "大型貨車", "capacity": 100, "num_available": 3 }
+  ],
+  "config": {
+    "max_runtime_seconds": 10,
+    "avg_speed_kmh": 35,
+    "seed": 42,
+    "scenario": "板橋下午補貨班 (14:00–18:00)"
+  }
+}
