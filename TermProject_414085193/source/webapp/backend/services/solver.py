@@ -6,7 +6,8 @@ PyVRP 求解器整合層。
 2. 手動組裝 GA（控制 nb_granular 鄰域大小避免小問題搜尋空間爆炸）
 3. 委派 serializer 把結果序列化為 SolveResponse
 """
-from typing import List
+import threading
+from typing import List, Optional
 
 from pyvrp import Model, PenaltyManager, Population, RandomNumberGenerator, Solution
 from pyvrp.diversity import broken_pairs_distance as bpd
@@ -104,8 +105,15 @@ def _build_model(
     return model
 
 
-def solve(req: SolveRequest) -> SolveResponse:
-    """求解主入口。"""
+def solve(
+    req: SolveRequest,
+    cancel_event: Optional[threading.Event] = None,
+) -> SolveResponse:
+    """求解主入口。
+
+    cancel_event 由 routes 層傳入，當客戶端斷線或請求被取消時設定，
+    GA 每次迭代都會檢查，讓 solver thread 能及時停止。
+    """
     # 1. 預檢
     _check_construction_feasibility(req)
 
@@ -136,13 +144,19 @@ def solve(req: SolveRequest) -> SolveResponse:
 
     algo = GeneticAlgorithm(data, pm, rng, pop, ls, srex, init)
 
-    # 5. 求解：NoImprovement 主控，MaxRuntime 保底
-    stop = TimedNoImprovement(
-        max_iterations=500,
+    # 5. 求解：NoImprovement + MaxRuntime 主控；cancel_event 提供外部中止能力
+    _timed = TimedNoImprovement(
+        max_iterations=2000,
         max_runtime=req.config.max_runtime_seconds,
     )
+
+    def _stop(best_cost: float) -> bool:
+        if cancel_event is not None and cancel_event.is_set():
+            return True
+        return _timed(best_cost)
+
     try:
-        result = algo.run(stop)
+        result = algo.run(_stop)
     except Exception as exc:  # noqa: BLE001
         raise SolverInternalError(f"PyVRP 求解失敗：{exc}") from exc
 
