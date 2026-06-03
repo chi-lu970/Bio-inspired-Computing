@@ -1,0 +1,111 @@
+{
+  "_comment": "7-11 大台北南區下午補貨班（18 家門市，三梯次時窗）。DC 板橋物流中心 13:30 出車，三梯次時窗：A梯 14:00-16:00、B梯 14:30-17:00、C梯 15:00-18:00。時間單位：分鐘（從午夜起算）。速度：35 km/h（下午市區）。",
+  "depot": {
+    "name": "統一超商 板橋物流中心",
+    "location": { "lat": 25.0141, "lng": 121.4628 },
+    "time_window": { "start": 810, "end": 1140 }
+  },
+  "stores": [
+    {
+      "id": "A001", "name": "7-ELEVEN 板橋文化店",
+      "location": { "lat": 25.0112, "lng": 121.4628 },
+      "time_window": { "start": 840, "end": 960 }, "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "A002", "name": "7-ELEVEN 板橋新埔店",
+      "location": { "lat": 25.0218, "lng": 121.4558 },
+      "time_window": { "start": 840, "end": 960 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "A003", "name": "7-ELEVEN 三重重陽店",
+      "location": { "lat": 25.0714, "lng": 121.4891 },
+      "time_window": { "start": 840, "end": 960 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "A004", "name": "7-ELEVEN 中和安平店",
+      "location": { "lat": 24.9970, "lng": 121.4880 },
+      "time_window": { "start": 840, "end": 960 }, "demand": 25, "service_minutes": 12
+    },
+    {
+      "id": "A005", "name": "7-ELEVEN 永和中正店",
+      "location": { "lat": 25.0143, "lng": 121.5108 },
+      "time_window": { "start": 840, "end": 960 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "A006", "name": "7-ELEVEN 萬華艋舺店",
+      "location": { "lat": 25.0334, "lng": 121.4978 },
+      "time_window": { "start": 840, "end": 960 }, "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "B001", "name": "7-ELEVEN 中正南昌店",
+      "location": { "lat": 25.0288, "lng": 121.5135 },
+      "time_window": { "start": 870, "end": 1020 }, "demand": 24, "service_minutes": 12
+    },
+    {
+      "id": "B002", "name": "7-ELEVEN 大安信義路店",
+      "location": { "lat": 25.0329, "lng": 121.5311 },
+      "time_window": { "start": 870, "end": 1020 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "B003", "name": "7-ELEVEN 大安和平店",
+      "location": { "lat": 25.0194, "lng": 121.5408 },
+      "time_window": { "start": 870, "end": 1020 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "B004", "name": "7-ELEVEN 文山景美店",
+      "location": { "lat": 24.9988, "lng": 121.5370 },
+      "time_window": { "start": 870, "end": 1020 }, "demand": 28, "service_minutes": 13
+    },
+    {
+      "id": "B005", "name": "7-ELEVEN 文山木柵店",
+      "location": { "lat": 24.9810, "lng": 121.5251 },
+      "time_window": { "start": 870, "end": 1020 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "B006", "name": "7-ELEVEN 新店中正路店",
+      "location": { "lat": 24.9719, "lng": 121.5383 },
+      "time_window": { "start": 870, "end": 1020 }, "demand": 18, "service_minutes": 10
+    },
+    {
+      "id": "C001", "name": "7-ELEVEN 中正公館店",
+      "location": { "lat": 25.0145, "lng": 121.5292 },
+      "time_window": { "start": 900, "end": 1080 }, "demand": 22, "service_minutes": 11
+    },
+    {
+      "id": "C002", "name": "7-ELEVEN 信義吳興店",
+      "location": { "lat": 25.0264, "lng": 121.5541 },
+      "time_window": { "start": 900, "end": 1080 }, "demand": 24, "service_minutes": 12
+    },
+    {
+      "id": "C003", "name": "7-ELEVEN 信義基隆路店",
+      "location": { "lat": 25.0466, "lng": 121.5521 },
+      "time_window": { "start": 900, "end": 1080 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "C004", "name": "7-ELEVEN 南港研究院店",
+      "location": { "lat": 25.0514, "lng": 121.6098 },
+      "time_window": { "start": 900, "end": 1080 }, "demand": 28, "service_minutes": 13
+    },
+    {
+      "id": "C005", "name": "7-ELEVEN 新店北新路店",
+      "location": { "lat": 24.9893, "lng": 121.5421 },
+      "time_window": { "start": 900, "end": 1080 }, "demand": 20, "service_minutes": 10
+    },
+    {
+      "id": "C006", "name": "7-ELEVEN 永和頂溪店",
+      "location": { "lat": 25.0081, "lng": 121.5078 },
+      "time_window": { "start": 900, "end": 1080 }, "demand": 22, "service_minutes": 11
+    }
+  ],
+  "vehicle_types": [
+    { "name": "小型廂型車", "capacity": 50,  "num_available": 2 },
+    { "name": "中型貨車",   "capacity": 80,  "num_available": 3 },
+    { "name": "大型貨車",   "capacity": 120, "num_available": 1 }
+  ],
+  "config": {
+    "max_runtime_seconds": 20,
+    "avg_speed_kmh": 35,
+    "seed": 2024,
+    "scenario": "下午補貨班 A梯 14:00-16:00 / B梯 14:30-17:00 / C梯 15:00-18:00"
+  }
+}
